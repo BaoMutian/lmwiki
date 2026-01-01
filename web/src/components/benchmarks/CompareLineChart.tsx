@@ -10,7 +10,9 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
+import { useState } from "react";
 import type { ParsedModel } from "@/lib/db/models";
+import { CustomLegend } from "./CustomLegend";
 
 // Apple 风格颜色
 const CHART_COLORS = [
@@ -73,6 +75,8 @@ function GlassTooltip({ active, payload }: CustomTooltipProps) {
 }
 
 export function CompareLineChart({ models, benchmarks }: CompareLineChartProps) {
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+
   // 转换数据格式 - 每个 benchmark 作为一个数据点
   const data = benchmarks.map((benchmark) => {
     const entry: Record<string, string | number | null> = {
@@ -131,34 +135,48 @@ export function CompareLineChart({ models, benchmarks }: CompareLineChartProps) 
           />
           <Tooltip content={<GlassTooltip />} />
           <Legend
+            content={
+              <CustomLegend
+                activeDataKey={activeSlug}
+                onHover={setActiveSlug}
+              />
+            }
             wrapperStyle={{
-              paddingTop: 20,
-              fontSize: 12,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+              paddingTop: 24,
             }}
           />
-          {models.map((model, index) => (
-            <Line
-              key={model.slug}
-              type="monotone"
-              dataKey={model.slug}
-              name={model.baseModelName || model.name}
-              stroke={CHART_COLORS[index % CHART_COLORS.length]}
-              strokeWidth={2}
-              dot={{
-                fill: CHART_COLORS[index % CHART_COLORS.length],
-                strokeWidth: 2,
-                stroke: "#fff",
-                r: 4,
-              }}
-              activeDot={{
-                r: 6,
-                stroke: "#fff",
-                strokeWidth: 2,
-              }}
-              connectNulls
-            />
-          ))}
+          {models.map((model, index) => {
+            const isActive = activeSlug === null || activeSlug === model.slug;
+            const isHighlighted = activeSlug === model.slug;
+            return (
+              <Line
+                key={model.slug}
+                type="monotone"
+                dataKey={model.slug}
+                name={model.baseModelName || model.name}
+                stroke={CHART_COLORS[index % CHART_COLORS.length]}
+                strokeWidth={isHighlighted ? 3 : 2}
+                strokeOpacity={isActive ? 1 : 0.15}
+                dot={{
+                  fill: CHART_COLORS[index % CHART_COLORS.length],
+                  fillOpacity: isActive ? 1 : 0.15,
+                  strokeWidth: 2,
+                  stroke: "#fff",
+                  strokeOpacity: isActive ? 1 : 0.15,
+                  r: 4,
+                }}
+                activeDot={{
+                  r: 6,
+                  stroke: "#fff",
+                  strokeWidth: 2,
+                }}
+                connectNulls
+                style={{
+                  transition: "stroke-opacity 0.2s, stroke-width 0.2s",
+                }}
+              />
+            );
+          })}
         </LineChart>
       </ResponsiveContainer>
     </div>

@@ -11,7 +11,9 @@ import {
   Legend,
   CartesianGrid,
 } from "recharts";
+import { useState } from "react";
 import type { ParsedModel } from "@/lib/db/models";
+import { CustomLegend } from "./CustomLegend";
 
 // Apple 风格颜色
 const CHART_COLORS = [
@@ -94,6 +96,8 @@ export function CompareBubbleChart({
   yAxis,
   zAxis,
 }: CompareBubbleChartProps) {
+  const [activeName, setActiveName] = useState<string | null>(null);
+
   // 为每个模型准备数据
   const scatterData = models.map((model, index) => {
     // 支持从 benchmarks 或模型直接属性中获取值
@@ -132,6 +136,7 @@ export function CompareBubbleChart({
       ],
       color: CHART_COLORS[index % CHART_COLORS.length],
       name: model.baseModelName || model.name,
+      slug: model.slug,
     };
   });
 
@@ -206,23 +211,34 @@ export function CompareBubbleChart({
           <ZAxis type="number" dataKey="z" range={[100, 400]} />
           <Tooltip content={<GlassTooltip />} />
           <Legend
+            content={
+              <CustomLegend
+                activeDataKey={activeName}
+                onHover={setActiveName}
+              />
+            }
             wrapperStyle={{
-              paddingTop: 20,
-              fontSize: 12,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+              paddingTop: 24,
             }}
           />
-          {validData.map((scatter) => (
-            <Scatter
-              key={scatter.name}
-              name={scatter.name}
-              data={scatter.data}
-              fill={scatter.color}
-              fillOpacity={0.7}
-              stroke={scatter.color}
-              strokeWidth={2}
-            />
-          ))}
+          {validData.map((scatter) => {
+            const isActive = activeName === null || activeName === scatter.name;
+            return (
+              <Scatter
+                key={scatter.name}
+                name={scatter.name}
+                data={scatter.data}
+                fill={scatter.color}
+                fillOpacity={isActive ? 0.7 : 0.1}
+                stroke={scatter.color}
+                strokeOpacity={isActive ? 1 : 0.2}
+                strokeWidth={2}
+                style={{
+                  transition: "fill-opacity 0.2s, stroke-opacity 0.2s",
+                }}
+              />
+            );
+          })}
         </ScatterChart>
       </ResponsiveContainer>
     </div>

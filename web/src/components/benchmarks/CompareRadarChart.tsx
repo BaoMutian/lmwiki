@@ -79,6 +79,7 @@ export function CompareRadarChart({ models, benchmarks }: CompareRadarChartProps
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
 
   // 缩放控制
   const handleZoomIn = () => setScale((s) => Math.min(s + 0.25, 3));
@@ -267,7 +268,12 @@ export function CompareRadarChart({ models, benchmarks }: CompareRadarChartProps
               <Tooltip content={<GlassTooltip />} cursor={false} />
 
               <Legend
-                content={<CustomLegend />}
+                content={
+                  <CustomLegend
+                    activeDataKey={activeSlug}
+                    onHover={setActiveSlug}
+                  />
+                }
                 wrapperStyle={{
                   paddingTop: 24,
                 }}
@@ -275,6 +281,8 @@ export function CompareRadarChart({ models, benchmarks }: CompareRadarChartProps
 
               {models.map((model, index) => {
                 const colors = CHART_COLORS[index % CHART_COLORS.length];
+                const isActive = activeSlug === null || activeSlug === model.slug;
+                const isHighlighted = activeSlug === model.slug;
                 return (
                   <Radar
                     key={model.slug}
@@ -282,13 +290,18 @@ export function CompareRadarChart({ models, benchmarks }: CompareRadarChartProps
                     dataKey={model.slug}
                     stroke={colors.main}
                     fill={`url(#${gradientId}-${model.slug})`}
-                    strokeWidth={2}
+                    strokeWidth={isHighlighted ? 3 : 2}
+                    strokeOpacity={isActive ? 1 : 0.15}
+                    fillOpacity={isActive ? 1 : 0.05}
                     dot={false}
                     activeDot={{
                       r: 5,
                       fill: colors.main,
                       stroke: "#fff",
                       strokeWidth: 2,
+                    }}
+                    style={{
+                      transition: "stroke-opacity 0.2s, fill-opacity 0.2s, stroke-width 0.2s",
                     }}
                   />
                 );

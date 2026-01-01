@@ -12,6 +12,10 @@ interface LegendPayloadItem {
 interface CustomLegendProps {
   payload?: LegendPayloadItem[];
   className?: string;
+  /** 当前高亮的 dataKey（悬停时） */
+  activeDataKey?: string | null;
+  /** 悬停回调 */
+  onHover?: (dataKey: string | null) => void;
 }
 
 /**
@@ -22,8 +26,14 @@ interface CustomLegendProps {
  * - 宽松的间距
  * - 精致的字体样式
  * - 居中排列
+ * - 悬停高亮交互
  */
-export function CustomLegend({ payload, className }: CustomLegendProps) {
+export function CustomLegend({
+  payload,
+  className,
+  activeDataKey,
+  onHover,
+}: CustomLegendProps) {
   if (!payload || payload.length === 0) return null;
 
   return (
@@ -32,32 +42,49 @@ export function CustomLegend({ payload, className }: CustomLegendProps) {
         "flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-8 pb-2",
         className
       )}
+      onMouseLeave={() => onHover?.(null)}
     >
-      {payload.map((entry, index) => (
-        <div
-          key={`legend-${index}`}
-          className="flex items-center gap-2.5 group cursor-default"
-        >
-          {/* 圆形色点 */}
-          <span
-            className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-offset-background transition-transform group-hover:scale-110"
-            style={{
-              backgroundColor: entry.color,
-              ringColor: `${entry.color}40`,
-            }}
-          />
-          {/* 图例文本 */}
-          <span
-            className="text-[13px] font-medium text-muted-foreground group-hover:text-foreground transition-colors tracking-tight"
-            style={{
-              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
-            }}
+      {payload.map((entry, index) => {
+        const dataKey = entry.dataKey || entry.value;
+        const isActive = activeDataKey === null || activeDataKey === dataKey;
+        const isHighlighted = activeDataKey === dataKey;
+
+        return (
+          <div
+            key={`legend-${index}`}
+            className={cn(
+              "flex items-center gap-2.5 cursor-pointer select-none transition-all duration-200",
+              isActive ? "opacity-100" : "opacity-30"
+            )}
+            onMouseEnter={() => onHover?.(dataKey)}
           >
-            {entry.value}
-          </span>
-        </div>
-      ))}
+            {/* 圆形色点 */}
+            <span
+              className={cn(
+                "w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-offset-2 ring-offset-background transition-all duration-200",
+                isHighlighted && "scale-125 ring-4"
+              )}
+              style={{
+                backgroundColor: entry.color,
+                // @ts-expect-error CSS custom property
+                "--tw-ring-color": `${entry.color}40`,
+              }}
+            />
+            {/* 图例文本 */}
+            <span
+              className={cn(
+                "text-[13px] font-medium transition-colors duration-200 tracking-tight",
+                isActive ? "text-foreground" : "text-muted-foreground"
+              )}
+              style={{
+                fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+              }}
+            >
+              {entry.value}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
-

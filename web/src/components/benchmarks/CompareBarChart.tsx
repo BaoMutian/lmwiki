@@ -11,6 +11,7 @@ import {
   Cell,
   CartesianGrid,
 } from "recharts";
+import { useState } from "react";
 import type { ParsedModel } from "@/lib/db/models";
 import { CustomLegend } from "./CustomLegend";
 
@@ -78,6 +79,8 @@ export function CompareBarChart({
   benchmarks,
   selectedBenchmark,
 }: CompareBarChartProps) {
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+
   // 如果选择了单个 benchmark，显示各模型在该 benchmark 上的对比
   if (selectedBenchmark) {
     const data = models.map((model, index) => ({
@@ -183,21 +186,33 @@ export function CompareBarChart({
           />
           <Tooltip content={<GlassTooltip />} cursor={{ fill: "transparent" }} />
           <Legend
-            content={<CustomLegend />}
+            content={
+              <CustomLegend
+                activeDataKey={activeSlug}
+                onHover={setActiveSlug}
+              />
+            }
             wrapperStyle={{
               paddingTop: 24,
             }}
           />
-          {models.map((model, index) => (
-            <Bar
-              key={model.slug}
-              dataKey={model.slug}
-              name={model.baseModelName || model.name}
-              fill={CHART_COLORS[index % CHART_COLORS.length]}
-              radius={[4, 4, 0, 0]}
-              maxBarSize={40}
-            />
-          ))}
+          {models.map((model, index) => {
+            const isActive = activeSlug === null || activeSlug === model.slug;
+            return (
+              <Bar
+                key={model.slug}
+                dataKey={model.slug}
+                name={model.baseModelName || model.name}
+                fill={CHART_COLORS[index % CHART_COLORS.length]}
+                fillOpacity={isActive ? 1 : 0.15}
+                radius={[4, 4, 0, 0]}
+                maxBarSize={40}
+                style={{
+                  transition: "fill-opacity 0.2s",
+                }}
+              />
+            );
+          })}
         </BarChart>
       </ResponsiveContainer>
     </div>
