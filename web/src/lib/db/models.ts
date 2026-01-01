@@ -22,6 +22,62 @@ export interface AggregatedModel extends ParsedModel {
   variantCount: number;
 }
 
+/**
+ * Variant type priority for selecting the representative model
+ * Lower number = higher priority (more likely to be selected as representative)
+ * 
+ * Priority logic:
+ * 1. Models without variantType (null) are the "pure" base model - highest priority
+ * 2. Common "standard" or "default" variants
+ * 3. Non-reasoning variants (often the base capability)
+ * 4. Other variants in alphabetical order
+ */
+function getVariantPriority(variantType: string | null): number {
+  if (variantType === null) return 0; // Highest priority - pure base model
+  
+  const normalized = variantType.toLowerCase();
+  
+  // Standard/default variants
+  if (normalized === "standard" || normalized === "default" || normalized === "base") return 1;
+  
+  // Non-reasoning often represents the base capability
+  if (normalized === "non-reasoning" || normalized === "non-thinking") return 2;
+  
+  // Medium/balanced variants
+  if (normalized === "medium" || normalized === "mid") return 3;
+  
+  // Reasoning/thinking variants (usually enhanced versions)
+  if (normalized === "reasoning" || normalized === "thinking") return 4;
+  
+  // High/low performance variants
+  if (normalized === "high" || normalized === "xhigh") return 5;
+  if (normalized === "low" || normalized === "minimal") return 6;
+  
+  // Everything else
+  return 10;
+}
+
+/**
+ * Determine if modelA should be preferred over modelB as the group representative
+ */
+function shouldPreferAsRepresentative(modelA: Model, modelB: Model): boolean {
+  const priorityA = getVariantPriority(modelA.variantType);
+  const priorityB = getVariantPriority(modelB.variantType);
+  
+  // Lower priority number wins
+  if (priorityA !== priorityB) {
+    return priorityA < priorityB;
+  }
+  
+  // If same priority, prefer the one with shorter variant name (more "standard")
+  if (modelA.variantType && modelB.variantType) {
+    return modelA.variantType.length < modelB.variantType.length;
+  }
+  
+  // Otherwise keep the existing one
+  return false;
+}
+
 // Helper to safely parse JSON fields (handles both JSON and string)
 function parseJsonArray(value: Prisma.JsonValue | null): string[] {
   if (!value) return [];
@@ -360,8 +416,11 @@ export async function getAggregatedModels(options: {
       const existing = modelMap.get(key)!;
       existing.count++;
       
-      // Optionally prefer the model without variant (base model) or first alphabetically
-      // For now, keep the first one encountered (based on sort order)
+      // Determine if this model should be the new representative
+      // Priority: 1. No variantType (base model), 2. Lower priority variant type
+      if (shouldPreferAsRepresentative(model, existing.model)) {
+        existing.model = model;
+      }
     }
   }
 
