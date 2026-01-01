@@ -14,6 +14,7 @@ import {
   Google,
   Mistral,
   Zhipu,
+  ZAI,
   Baichuan,
   Moonshot,
   DeepSeek,
@@ -28,8 +29,11 @@ import {
   Perplexity,
   Claude,
   Gemini,
-  ZAI,
+  Spark,
+  Grok,
   XAI,
+  HuggingFace,
+  Ollama,
 } from "@lobehub/icons";
 import { Sparkles } from "lucide-react";
 import type { FC, ReactNode } from "react";
@@ -55,6 +59,7 @@ const developerColorIcons: Record<string, IconWithColor> = {
   "Google DeepMind": Google as unknown as IconWithColor,
   "Mistral AI": Mistral as unknown as IconWithColor,
   "Mistral": Mistral as unknown as IconWithColor,
+
   
   // xAI
   "xAI": XAI as unknown as IconWithColor,
@@ -88,12 +93,17 @@ const developerColorIcons: Record<string, IconWithColor> = {
   "Tencent": Hunyuan as unknown as IconWithColor,
   "字节跳动": Doubao as unknown as IconWithColor,
   "ByteDance": Doubao as unknown as IconWithColor,
+  "科大讯飞": Spark as unknown as IconWithColor,
+  "iFlytek": Spark as unknown as IconWithColor,
   
   // Other providers
   "NVIDIA": Nvidia as unknown as IconWithColor,
   "Nvidia": Nvidia as unknown as IconWithColor,
   "Perplexity": Perplexity as unknown as IconWithColor,
   "Perplexity AI": Perplexity as unknown as IconWithColor,
+  "Hugging Face": HuggingFace as unknown as IconWithColor,
+  "HuggingFace": HuggingFace as unknown as IconWithColor,
+  "Ollama": Ollama as unknown as IconWithColor,
 };
 
 // Model family to Icon mapping (fallback if developer not found)
@@ -104,7 +114,6 @@ const familyColorIcons: Record<string, IconWithColor> = {
   "Llama": Meta as unknown as IconWithColor,
   "Qwen": Qwen as unknown as IconWithColor,
   "GLM": ZAI as unknown as IconWithColor,
-  "ChatGLM": ZAI as unknown as IconWithColor,
   "Mistral": Mistral as unknown as IconWithColor,
   "Mixtral": Mistral as unknown as IconWithColor,
   "DeepSeek": DeepSeek as unknown as IconWithColor,
@@ -115,8 +124,10 @@ const familyColorIcons: Record<string, IconWithColor> = {
   "Moonshot": Moonshot as unknown as IconWithColor,
   "Kimi": Moonshot as unknown as IconWithColor,
   "MiniMax": Minimax as unknown as IconWithColor,
+  "Spark": Spark as unknown as IconWithColor,
   "Hunyuan": Hunyuan as unknown as IconWithColor,
   "Phi": OpenAI as unknown as IconWithColor,
+  "Grok": Grok as unknown as IconWithColor,
 };
 
 // Model name keywords to Icon mapping (most specific)
@@ -142,7 +153,10 @@ const modelKeywordColorIcons: Record<string, IconWithColor> = {
   "moonshot": Moonshot as unknown as IconWithColor,
   "kimi": Moonshot as unknown as IconWithColor,
   "minimax": Minimax as unknown as IconWithColor,
+  "spark": Spark as unknown as IconWithColor,
   "hunyuan": Hunyuan as unknown as IconWithColor,
+  "phi-": OpenAI as unknown as IconWithColor,
+  "grok": Grok as unknown as IconWithColor,
 };
 
 /**
@@ -193,10 +207,14 @@ export function ModelIcon({
 }) {
   const Icon = getColorIcon(name, developer, family);
   
-  // 使用彩色版本 (.Color)
-  if (Icon && Icon.Color) {
-    const ColorIcon = Icon.Color;
-    return <ColorIcon size={size} className={className} />;
+  // 使用彩色版本 (.Color)，如果没有则使用普通版本
+  if (Icon) {
+    if (Icon.Color) {
+      const ColorIcon = Icon.Color;
+      return <ColorIcon size={size} className={className} />;
+    }
+    // 如果没有 Color 变体，直接使用图标本身
+    return <Icon size={size} className={className} />;
   }
   
   // Fallback to Sparkles icon
