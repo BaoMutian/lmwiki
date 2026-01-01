@@ -10,18 +10,23 @@ import {
   Code, 
   ExternalLink,
   Lock,
-  Unlock
+  Unlock,
+  Layers
 } from "lucide-react";
-import type { ParsedModel } from "@/lib/db/models";
+import type { AggregatedModel } from "@/lib/db/models";
 import { ModelIcon } from "@/lib/icons";
 
 interface ModelCardProps {
-  model: ParsedModel;
+  model: AggregatedModel;
   view?: "grid" | "list";
 }
 
 export function ModelCard({ model, view = "grid" }: ModelCardProps) {
   const isOpen = model.modelType === "open";
+  const hasVariants = model.variantCount > 1;
+  
+  // Display name: use baseModelName if available (for aggregated view)
+  const displayName = model.baseModelName || model.name;
   
   // Get capability icons
   const capabilities = [
@@ -52,8 +57,14 @@ export function ModelCard({ model, view = "grid" }: ModelCardProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold truncate group-hover:text-primary transition-colors">
-                    {model.name}
+                    {displayName}
                   </h3>
+                  {hasVariants && (
+                    <Badge variant="secondary" className="shrink-0 gap-1">
+                      <Layers className="h-3 w-3" />
+                      {model.variantCount}
+                    </Badge>
+                  )}
                   {isOpen ? (
                     <Badge variant="outline" className="shrink-0 text-green-600 border-green-600/30 bg-green-500/10">
                       <Unlock className="h-3 w-3 mr-1" />
@@ -150,9 +161,17 @@ export function ModelCard({ model, view = "grid" }: ModelCardProps) {
 
           {/* Model Info */}
           <div className="flex-1">
-            <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors line-clamp-1">
-              {model.name}
-            </h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-lg group-hover:text-primary transition-colors line-clamp-1">
+                {displayName}
+              </h3>
+              {hasVariants && (
+                <Badge variant="secondary" className="shrink-0 gap-1 text-xs">
+                  <Layers className="h-3 w-3" />
+                  {model.variantCount}
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground mb-3">
               {model.developer}
             </p>

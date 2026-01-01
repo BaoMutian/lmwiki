@@ -17,6 +17,11 @@ export interface ParsedModel extends Omit<Model,
   metadata: Record<string, unknown>;
 }
 
+// Extended model with variant count for aggregated list views
+export interface AggregatedModel extends ParsedModel {
+  variantCount: number;
+}
+
 // Helper to safely parse JSON fields (handles both JSON and string)
 function parseJsonArray(value: Prisma.JsonValue | null): string[] {
   if (!value) return [];
@@ -251,4 +256,126 @@ export interface VariantInfo {
   name: string;
   variantType: string | null;
   benchmarks: Record<string, number>;
+}
+
+// Get aggregated models (group variants together)
+export async function getAggregatedModels(options: {
+  filters?: ModelFilters;
+  sortBy?: ModelSortField;
+  sortOrder?: ModelSortOrder;
+  page?: number;
+  limit?: number;
+} = {}): Promise<{ models: AggregatedModel[]; total: number }> {
+  const {
+    filters = {},
+    sortBy = "releaseDate",
+    sortOrder = "desc",
+    page = 1,
+    limit = 24,
+  } = options;
+
+  // Build where clause
+  const where: Prisma.ModelWhereInput = {};
+
+  if (filters.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: "insensitive" } },
+      { baseModelName: { contains: filters.search, mode: "insensitive" } },
+      { developer: { contains: filters.search, mode: "insensitive" } },
+      { family: { contains: filters.search, mode: "insensitive" } },
+      { description: { contains: filters.search, mode: "insensitive" } },
+    ];
+  }
+
+  if (filters.modelType) {
+    where.modelType = filters.modelType;
+  }
+
+  if (filters.family) {
+    where.family = filters.family;
+  }
+
+  if (filters.developer) {
+    where.developer = filters.developer;
+  }
+
+  if (filters.architecture) {
+    where.architecture = filters.architecture;
+  }
+
+  if (filters.supportsVision !== undefined) {
+    where.supportsVision = filters.supportsVision;
+  }
+
+  if (filters.supportsReasoning !== undefined) {
+    where.supportsReasoning = filters.supportsReasoning;
+  }
+
+  if (filters.supportsToolUse !== undefined) {
+    where.supportsToolUse = filters.supportsToolUse;
+  }
+
+  if (filters.minParams !== undefined || filters.maxParams !== undefined) {
+    where.paramsTotal = {};
+    if (filters.minParams !== undefined) {
+      where.paramsTotal.gte = filters.minParams;
+    }
+    if (filters.maxParams !== undefined) {
+      where.paramsTotal.lte = filters.maxParams;
+    }
+  }
+
+  if (filters.minContext !== undefined || filters.maxContext !== undefined) {
+    where.contextWindow = {};
+    if (filters.minContext !== undefined) {
+      where.contextWindow.gte = filters.minContext;
+    }
+    if (filters.maxContext !== undefined) {
+      where.contextWindow.lte = filters.maxContext;
+    }
+  }
+
+  // Build orderBy
+  const orderBy: Prisma.ModelOrderByWithRelationInput = {};
+  orderBy[sortBy] = sortOrder;
+
+  // Get all matching models
+  const allModels = await prisma.model.findMany({
+    where,
+    orderBy,
+  });
+
+  // Group by baseModelName and aggregate
+  const modelMap = new Map<string, { model: Model; count: number }>();
+  
+  for (const model of allModels) {
+    // Use baseModelName as key, fallback to name if no variants
+    const key = model.baseModelName || model.name;
+    
+    if (!modelMap.has(key)) {
+      // First model of this group - use it as the representative
+      modelMap.set(key, { model, count: 1 });
+    } else {
+      // Increment count for existing group
+      const existing = modelMap.get(key)!;
+      existing.count++;
+      
+      // Optionally prefer the model without variant (base model) or first alphabetically
+      // For now, keep the first one encountered (based on sort order)
+    }
+  }
+
+  // Convert to array and apply pagination
+  const aggregatedList = Array.from(modelMap.values());
+  const total = aggregatedList.length;
+  
+  const paginatedList = aggregatedList.slice((page - 1) * limit, page * limit);
+
+  // Convert to AggregatedModel
+  const models: AggregatedModel[] = paginatedList.map(({ model, count }) => ({
+    ...parseModel(model),
+    variantCount: count,
+  }));
+
+  return { models, total };
 }

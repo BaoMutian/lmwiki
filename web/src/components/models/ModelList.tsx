@@ -1,4 +1,4 @@
-import { getModels, type ModelFilters, type ModelSortField, type ModelSortOrder } from "@/lib/db/models";
+import { getAggregatedModels, type ModelFilters, type ModelSortField, type ModelSortOrder } from "@/lib/db/models";
 import { ModelCard } from "./ModelCard";
 import { SortingBar } from "./SortingBar";
 import { Pagination } from "./Pagination";
@@ -77,8 +77,8 @@ export async function ModelList({ searchParams }: ModelListProps) {
   // Parse view mode
   const view = searchParams.view === "list" ? "list" : "grid";
 
-  // Fetch models
-  const { models, total } = await getModels({
+  // Fetch aggregated models (variants grouped together)
+  const { models, total } = await getAggregatedModels({
     filters,
     sortBy,
     sortOrder,
