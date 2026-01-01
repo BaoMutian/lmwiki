@@ -1,13 +1,18 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { ModelIcon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
-import { Layers, Trophy, Medal, Award, Lock, Unlock } from "lucide-react";
+import { Layers, Trophy, Medal, Award, Lock, Unlock, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import type { RankedModel } from "@/lib/db/benchmarks";
 import Link from "next/link";
+
+type SortField = "rank" | "name" | "score";
+type SortOrder = "asc" | "desc";
 
 interface BenchmarkRankingTableProps {
   models: RankedModel[];
@@ -53,8 +58,60 @@ export function BenchmarkRankingTable({
   maxScore,
   maxSelection = 7,
 }: BenchmarkRankingTableProps) {
+  const [sortField, setSortField] = useState<SortField>("rank");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
+
   const computedMaxScore = maxScore || Math.max(...models.map((m) => m.score || 0), 100);
   const isAtLimit = selectedSlugs.length >= maxSelection;
+
+  // 排序后的模型列表
+  const sortedModels = useMemo(() => {
+    const sorted = [...models].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortField) {
+        case "rank":
+          comparison = a.rank - b.rank;
+          break;
+        case "name":
+          const nameA = (a.baseModelName || a.name).toLowerCase();
+          const nameB = (b.baseModelName || b.name).toLowerCase();
+          comparison = nameA.localeCompare(nameB);
+          break;
+        case "score":
+          const scoreA = a.score ?? -Infinity;
+          const scoreB = b.score ?? -Infinity;
+          comparison = scoreA - scoreB;
+          break;
+      }
+      
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+    
+    return sorted;
+  }, [models, sortField, sortOrder]);
+
+  // 切换排序
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // 同一字段，切换排序方向
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      // 不同字段，设置新字段和默认排序方向
+      setSortField(field);
+      setSortOrder(field === "name" ? "asc" : "asc");
+    }
+  };
+
+  // 获取排序图标
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />;
+    }
+    return sortOrder === "asc" 
+      ? <ArrowUp className="h-3.5 w-3.5" />
+      : <ArrowDown className="h-3.5 w-3.5" />;
+  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -84,7 +141,7 @@ export function BenchmarkRankingTable({
     <Card className="border-border/50 overflow-hidden">
       <CardContent className="p-0">
         {/* Table Header */}
-        <div className="flex items-center gap-4 px-4 py-3 border-b border-border/50 bg-muted/30">
+        <div className="flex items-center gap-4 px-4 py-2 border-b border-border/50 bg-muted/30">
           <div className="w-10">
             <Checkbox
               checked={allSelected}
@@ -93,20 +150,53 @@ export function BenchmarkRankingTable({
               aria-label="全选"
             />
           </div>
-          <div className="w-12 text-sm font-medium text-muted-foreground text-center">
-            排名
+          <div className="w-12">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort("rank")}
+              className={cn(
+                "h-8 px-2 gap-1 text-sm font-medium",
+                sortField === "rank" ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              排名
+              {getSortIcon("rank")}
+            </Button>
           </div>
-          <div className="flex-1 text-sm font-medium text-muted-foreground">
-            模型
+          <div className="flex-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort("name")}
+              className={cn(
+                "h-8 px-2 gap-1 text-sm font-medium",
+                sortField === "name" ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              模型
+              {getSortIcon("name")}
+            </Button>
           </div>
-          <div className="w-48 text-sm font-medium text-muted-foreground text-right">
-            {benchmark}
+          <div className="w-48 flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort("score")}
+              className={cn(
+                "h-8 px-2 gap-1 text-sm font-medium",
+                sortField === "score" ? "text-foreground" : "text-muted-foreground"
+              )}
+            >
+              {benchmark}
+              {getSortIcon("score")}
+            </Button>
           </div>
         </div>
 
         {/* Table Body */}
         <div className="divide-y divide-border/30">
-          {models.map((model) => {
+          {sortedModels.map((model) => {
             const isSelected = selectedSlugs.includes(model.slug);
             const isOpen = model.modelType === "open";
             const hasVariants = model.variantCount > 1;
