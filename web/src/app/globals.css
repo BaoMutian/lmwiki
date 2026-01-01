@@ -149,21 +149,44 @@
 }
 
 @layer components {
-  /* Recharts - Remove focus outlines and selection boxes */
+  /* Recharts - Completely remove all focus outlines and selection boxes */
   .recharts-wrapper,
+  .recharts-wrapper *,
   .recharts-surface,
+  .recharts-surface *,
   .recharts-radar-polygon,
   .recharts-radar,
-  .recharts-layer {
+  .recharts-layer,
+  .recharts-responsive-container,
+  .recharts-responsive-container * {
     outline: none !important;
+    outline-width: 0 !important;
+    outline-style: none !important;
+    outline-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
   
   .recharts-wrapper:focus,
+  .recharts-wrapper:focus-visible,
+  .recharts-wrapper:focus-within,
   .recharts-surface:focus,
+  .recharts-surface:focus-visible,
   .recharts-radar-polygon:focus,
-  .recharts-radar:focus {
+  .recharts-radar:focus,
+  [class*="recharts"]:focus,
+  [class*="recharts"]:focus-visible {
     outline: none !important;
+    outline-width: 0 !important;
     box-shadow: none !important;
+    border: none !important;
+  }
+  
+  /* SVG elements inside Recharts */
+  .recharts-wrapper svg,
+  .recharts-wrapper svg *,
+  .recharts-surface svg * {
+    outline: none !important;
   }
   
   /* Remove default Recharts tooltip styles */
