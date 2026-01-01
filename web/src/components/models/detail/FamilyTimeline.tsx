@@ -3,19 +3,20 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { GitBranch, ChevronLeft, ChevronRight } from "lucide-react";
+import { GitBranch, ChevronLeft, ChevronRight, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
-import type { ParsedModel } from "@/lib/db/models";
+import type { AggregatedModel } from "@/lib/db/models";
 
 interface FamilyTimelineProps {
-  models: ParsedModel[];
+  models: AggregatedModel[];
   currentSlug: string;
+  currentBaseModelName: string | null;
   familyName: string;
 }
 
-export function FamilyTimeline({ models, currentSlug, familyName }: FamilyTimelineProps) {
+export function FamilyTimeline({ models, currentSlug, currentBaseModelName, familyName }: FamilyTimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -37,7 +38,7 @@ export function FamilyTimeline({ models, currentSlug, familyName }: FamilyTimeli
           </div>
           {familyName} 家族
           <Badge variant="secondary" className="ml-1 rounded-lg">
-            {models.length} 个模型
+            {models.length} 个版本
           </Badge>
         </CardTitle>
         <div className="flex gap-1.5">
@@ -66,7 +67,13 @@ export function FamilyTimeline({ models, currentSlug, familyName }: FamilyTimeli
           className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1"
         >
           {models.map((model, index) => {
-            const isCurrent = model.slug === currentSlug;
+            // Check if this is the current model group (by baseModelName)
+            const isCurrent = model.baseModelName 
+              ? model.baseModelName === currentBaseModelName
+              : model.slug === currentSlug;
+            const hasVariants = model.variantCount > 1;
+            const displayName = model.baseModelName || model.shortName || model.name;
+            
             return (
               <div key={model.slug} className="flex items-center">
                 {/* Timeline Node */}
@@ -86,7 +93,7 @@ export function FamilyTimeline({ models, currentSlug, familyName }: FamilyTimeli
                         "font-semibold truncate text-sm",
                         isCurrent && "text-primary"
                       )}>
-                        {model.shortName || model.name}
+                        {displayName}
                       </h4>
                       {isCurrent && (
                         <Badge variant="default" className="shrink-0 text-[10px] px-1.5 py-0.5 rounded-md">
@@ -98,6 +105,12 @@ export function FamilyTimeline({ models, currentSlug, familyName }: FamilyTimeli
                       {model.releaseDate || "未知日期"}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
+                      {hasVariants && (
+                        <Badge variant="secondary" className="text-[10px] rounded-md px-1.5 py-0.5 gap-0.5">
+                          <Layers className="h-2.5 w-2.5" />
+                          {model.variantCount}
+                        </Badge>
+                      )}
                       {model.paramsTotal && (
                         <Badge variant="outline" className="text-[10px] rounded-md px-1.5 py-0.5">
                           {model.paramsTotal}B

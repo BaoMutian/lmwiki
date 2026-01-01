@@ -283,14 +283,48 @@ export async function getFilterOptions(): Promise<{
   };
 }
 
-// Get models by family for family timeline
-export async function getModelsByFamily(family: string): Promise<ParsedModel[]> {
-  const models = await prisma.model.findMany({
+// Get models by family for family timeline (non-aggregated, for internal use)
+async function getModelsByFamilyRaw(family: string): Promise<Model[]> {
+  return prisma.model.findMany({
     where: { family },
     orderBy: { releaseDate: "asc" },
   });
+}
 
-  return models.map(parseModel);
+// Get aggregated models by family for family timeline
+export async function getModelsByFamily(family: string): Promise<AggregatedModel[]> {
+  const allModels = await getModelsByFamilyRaw(family);
+  
+  // Group by baseModelName and aggregate (same logic as getAggregatedModels)
+  const modelMap = new Map<string, { model: Model; count: number }>();
+  
+  for (const model of allModels) {
+    const key = model.baseModelName || model.name;
+    
+    if (!modelMap.has(key)) {
+      modelMap.set(key, { model, count: 1 });
+    } else {
+      const existing = modelMap.get(key)!;
+      existing.count++;
+      
+      if (shouldPreferAsRepresentative(model, existing.model)) {
+        existing.model = model;
+      }
+    }
+  }
+
+  // Convert to array, maintaining chronological order by representative's release date
+  const aggregatedList = Array.from(modelMap.values())
+    .sort((a, b) => {
+      const dateA = a.model.releaseDate || "";
+      const dateB = b.model.releaseDate || "";
+      return dateA.localeCompare(dateB);
+    });
+
+  return aggregatedList.map(({ model, count }) => ({
+    ...parseModel(model),
+    variantCount: count,
+  }));
 }
 
 // Get all variants of a model by base model name

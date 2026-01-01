@@ -87,6 +87,7 @@ export default async function ModelDetailPage({ params }: PageProps) {
               <FamilyTimeline
                 models={familyModels}
                 currentSlug={model.slug}
+                currentBaseModelName={model.baseModelName}
                 familyName={model.family || ""}
               />
             )}
