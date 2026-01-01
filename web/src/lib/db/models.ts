@@ -1,5 +1,5 @@
 import prisma from "./prisma";
-import type { Model } from "@prisma/client";
+import type { Model, Prisma } from "@prisma/client";
 
 // Types for parsed model data
 export interface ParsedModel extends Omit<Model, 
@@ -17,23 +17,31 @@ export interface ParsedModel extends Omit<Model,
   metadata: Record<string, unknown>;
 }
 
-// Helper to parse JSON fields
-function parseJsonArray(value: string | null): string[] {
+// Helper to safely parse JSON fields (handles both JSON and string)
+function parseJsonArray(value: Prisma.JsonValue | null): string[] {
   if (!value) return [];
-  try {
-    return JSON.parse(value);
-  } catch {
-    return [];
+  if (Array.isArray(value)) return value as string[];
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
   }
+  return [];
 }
 
-function parseJsonObject<T>(value: string | null): T {
+function parseJsonObject<T>(value: Prisma.JsonValue | null): T {
   if (!value) return {} as T;
-  try {
-    return JSON.parse(value);
-  } catch {
-    return {} as T;
+  if (typeof value === "object" && !Array.isArray(value)) return value as T;
+  if (typeof value === "string") {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return {} as T;
+    }
   }
+  return {} as T;
 }
 
 // Convert database model to parsed model
@@ -95,14 +103,14 @@ export async function getModels(options: {
   } = options;
 
   // Build where clause
-  const where: Record<string, unknown> = {};
+  const where: Prisma.ModelWhereInput = {};
 
   if (filters.search) {
     where.OR = [
-      { name: { contains: filters.search } },
-      { developer: { contains: filters.search } },
-      { family: { contains: filters.search } },
-      { description: { contains: filters.search } },
+      { name: { contains: filters.search, mode: "insensitive" } },
+      { developer: { contains: filters.search, mode: "insensitive" } },
+      { family: { contains: filters.search, mode: "insensitive" } },
+      { description: { contains: filters.search, mode: "insensitive" } },
     ];
   }
 
@@ -137,25 +145,25 @@ export async function getModels(options: {
   if (filters.minParams !== undefined || filters.maxParams !== undefined) {
     where.paramsTotal = {};
     if (filters.minParams !== undefined) {
-      (where.paramsTotal as Record<string, number>).gte = filters.minParams;
+      where.paramsTotal.gte = filters.minParams;
     }
     if (filters.maxParams !== undefined) {
-      (where.paramsTotal as Record<string, number>).lte = filters.maxParams;
+      where.paramsTotal.lte = filters.maxParams;
     }
   }
 
   if (filters.minContext !== undefined || filters.maxContext !== undefined) {
     where.contextWindow = {};
     if (filters.minContext !== undefined) {
-      (where.contextWindow as Record<string, number>).gte = filters.minContext;
+      where.contextWindow.gte = filters.minContext;
     }
     if (filters.maxContext !== undefined) {
-      (where.contextWindow as Record<string, number>).lte = filters.maxContext;
+      where.contextWindow.lte = filters.maxContext;
     }
   }
 
   // Build orderBy
-  const orderBy: Record<string, string> = {};
+  const orderBy: Prisma.ModelOrderByWithRelationInput = {};
   orderBy[sortBy] = sortOrder;
 
   // Get total count
@@ -223,4 +231,3 @@ export async function getModelsByFamily(family: string): Promise<ParsedModel[]> 
 
   return models.map(parseModel);
 }
-

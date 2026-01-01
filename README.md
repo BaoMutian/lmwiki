@@ -23,9 +23,10 @@ lmwiki/
 - **框架**: Next.js 15 (App Router)
 - **UI**: Tailwind CSS + Shadcn/ui
 - **图表**: Recharts
-- **数据库**: SQLite + Prisma ORM
+- **数据库**: PostgreSQL (Vercel Postgres) + Prisma ORM
 - **动效**: Framer Motion
 - **状态**: TanStack Query
+- **部署**: Vercel
 
 ## 快速开始
 
@@ -36,7 +37,24 @@ cd web
 npm install
 ```
 
-### 2. 初始化数据库
+### 2. 配置 Vercel Postgres 数据库
+
+```bash
+# 安装 Vercel CLI (如果未安装)
+npm i -g vercel
+
+# 登录 Vercel
+vercel login
+
+# 链接项目
+vercel link
+
+# 创建 Postgres 数据库 (在 Vercel Dashboard > Storage)
+# 然后拉取环境变量
+vercel env pull .env.local
+```
+
+### 3. 初始化数据库
 
 ```bash
 # 运行数据库迁移
@@ -46,7 +64,7 @@ npm run db:migrate
 npm run db:import
 ```
 
-### 3. 启动开发服务器
+### 4. 启动开发服务器
 
 ```bash
 npm run dev

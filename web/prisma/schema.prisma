@@ -6,14 +6,18 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:../data/lmwiki.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
+// ==========================================
+// Model Data (模型数据)
+// ==========================================
 model Model {
   id        Int      @id @default(autoincrement())
   
-  // Identity
+  // Identity (基础身份信息)
   name          String
   shortName     String?   @map("short_name")
   slug          String    @unique
@@ -23,13 +27,13 @@ model Model {
   family        String?
   modelSeries   String?   @map("model_series")
   branchType    String?   @map("branch_type")
-  description   String?
+  description   String?   @db.Text
   logoUrl       String?   @map("logo_url")
   
-  // Model type
+  // Model type (模型类型)
   modelType     String    @map("model_type") // "open" or "closed"
   
-  // Technical Specs
+  // Technical Specs (技术规格)
   architecture        String?
   paramsTotal         Float?    @map("params_total")
   paramsActive        Float?    @map("params_active")
@@ -38,52 +42,114 @@ model Model {
   trainingTokens      Float?    @map("training_tokens")
   vocabSize           Int?      @map("vocab_size")
   knowledgeCutoff     String?   @map("knowledge_cutoff")
-  fineTuningMethod    String?   @map("fine_tuning_method") // JSON array as string
+  fineTuningMethod    Json?     @map("fine_tuning_method") @db.JsonB
   layers              Int?
   attentionMechanism  String?   @map("attention_mechanism")
   
-  // Commercial & Licensing
+  // Commercial & Licensing (商用与授权)
   license               String?
   commercialUseAllowed  Boolean?  @map("commercial_use_allowed")
   pricingInput          Float?    @map("pricing_input")
   pricingOutput         Float?    @map("pricing_output")
   freeTierAvailable     Boolean?  @map("free_tier_available")
   
-  // Capabilities & Modalities
-  modalitiesInput   String?   @map("modalities_input")   // JSON array as string
-  modalitiesOutput  String?   @map("modalities_output")  // JSON array as string
-  languages         String?                               // JSON array as string
+  // Capabilities & Modalities (能力与模态)
+  modalitiesInput   Json?     @map("modalities_input")   @db.JsonB
+  modalitiesOutput  Json?     @map("modalities_output")  @db.JsonB
+  languages         Json?     @db.JsonB
   supportsToolUse   Boolean?  @map("supports_tool_use")
   supportsJsonMode  Boolean?  @map("supports_json_mode")
   supportsVision    Boolean?  @map("supports_vision")
   codingCapable     Boolean?  @map("coding_capable")
   supportsReasoning Boolean?  @map("supports_reasoning")
   
-  // Deployment & Hardware (open source only)
+  // Deployment & Hardware (部署与硬件 - 仅开源模型)
   modelSize               Float?    @map("model_size")
   tensorType              String?   @map("tensor_type")
   modelFormat             String?   @map("model_format")
   numFiles                Int?      @map("num_files")
-  quantizationAvailable   String?   @map("quantization_available")  // JSON array as string
-  inferenceFrameworks     String?   @map("inference_frameworks")    // JSON array as string
+  quantizationAvailable   Json?     @map("quantization_available")  @db.JsonB
+  inferenceFrameworks     Json?     @map("inference_frameworks")    @db.JsonB
   
-  // Benchmarks
+  // Benchmarks (评测基准)
   scoreArenaElo   Int?      @map("score_arena_elo")
-  benchmarks      String?   // JSON object as string
+  benchmarks      Json?     @db.JsonB
   
-  // Resources & Links
-  urlPaper      String?   @map("url_paper")
-  urlHuggingface String?  @map("url_huggingface")
-  urlDemo       String?   @map("url_demo")
-  urlGithub     String?   @map("url_github")
-  urlApiDocs    String?   @map("url_api_docs")
-  urlBlog       String?   @map("url_blog")
-  urlWebsite    String?   @map("url_website")
+  // Resources & Links (外部资源)
+  urlPaper       String?   @map("url_paper")
+  urlHuggingface String?   @map("url_huggingface")
+  urlDemo        String?   @map("url_demo")
+  urlGithub      String?   @map("url_github")
+  urlApiDocs     String?   @map("url_api_docs")
+  urlBlog        String?   @map("url_blog")
+  urlWebsite     String?   @map("url_website")
   
-  // Metadata
-  metadata    String?   // JSON object as string
+  // Metadata (元数据)
+  metadata    Json?     @db.JsonB
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations (关联 - Phase 3 社区功能)
+  reviews     Review[]
+  
+  @@map("models")
+  @@index([developer])
+  @@index([family])
+  @@index([modelType])
+  @@index([releaseDate])
+}
+
+// ==========================================
+// User & Community (用户与社区 - Phase 3)
+// ==========================================
+model User {
+  id            String    @id @default(cuid())
+  email         String?   @unique
+  name          String?
+  avatar        String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  reviews       Review[]
+  favorites     Favorite[]
+  
+  @@map("users")
+}
+
+model Review {
+  id          Int       @id @default(autoincrement())
+  rating      Int       // 1-5 stars
+  title       String?
+  content     String?   @db.Text
+  isLongForm  Boolean   @default(false) @map("is_long_form")
+  tags        Json?     @db.JsonB // ["代码强", "幻觉多", ...]
+  images      Json?     @db.JsonB // Array of image URLs
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  modelId     Int       @map("model_id")
+  model       Model     @relation(fields: [modelId], references: [id], onDelete: Cascade)
+  
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   
-  @@map("models")
+  @@unique([userId, modelId])
+  @@map("reviews")
+  @@index([modelId])
+  @@index([rating])
+}
+
+model Favorite {
+  id          Int       @id @default(autoincrement())
+  
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  modelSlug   String    @map("model_slug")
+  
+  createdAt   DateTime  @default(now()) @map("created_at")
+  
+  @@unique([userId, modelSlug])
+  @@map("favorites")
 }
