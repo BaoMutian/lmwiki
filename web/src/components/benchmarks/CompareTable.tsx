@@ -11,7 +11,6 @@ import Link from "next/link";
 interface CompareTableProps {
   models: ParsedModel[];
   benchmarks: string[];
-  showOnlyCommon?: boolean;
   onRemoveModel?: (slug: string) => void;
 }
 
@@ -26,7 +25,6 @@ function getProgressColor(ratio: number): string {
 export function CompareTable({
   models,
   benchmarks,
-  showOnlyCommon = false,
   onRemoveModel,
 }: CompareTableProps) {
   // 计算每个 benchmark 的最大值和哪个模型获得最高分
@@ -49,13 +47,6 @@ export function CompareTable({
 
     benchmarkStats[benchmark] = { max: max || 100, bestSlug };
   }
-
-  // 过滤：如果 showOnlyCommon，只显示所有模型都有的 benchmark
-  const displayBenchmarks = showOnlyCommon
-    ? benchmarks.filter((b) =>
-        models.every((m) => m.benchmarks[b] !== undefined)
-      )
-    : benchmarks;
 
   if (models.length === 0) {
     return (
@@ -129,7 +120,7 @@ export function CompareTable({
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {displayBenchmarks.map((benchmark) => {
+              {benchmarks.map((benchmark) => {
                 const stats = benchmarkStats[benchmark];
 
                 return (
@@ -206,7 +197,7 @@ export function CompareTable({
         </div>
 
         {/* 无数据提示 */}
-        {displayBenchmarks.length === 0 && (
+        {benchmarks.length === 0 && (
           <div className="py-12 text-center text-muted-foreground">
             <Info className="h-8 w-8 mx-auto mb-3 opacity-50" />
             <p>所选模型没有共同的 Benchmark 数据</p>

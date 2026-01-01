@@ -16,6 +16,7 @@ import { CompareBarChart } from "@/components/benchmarks/CompareBarChart";
 import { CompareLineChart } from "@/components/benchmarks/CompareLineChart";
 import { CompareBubbleChart } from "@/components/benchmarks/CompareBubbleChart";
 import { CompareHeatmap } from "@/components/benchmarks/CompareHeatmap";
+import { BenchmarkMultiSelector } from "@/components/benchmarks/BenchmarkMultiSelector";
 import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
@@ -28,6 +29,7 @@ import {
   X,
   Info,
   Share2,
+  Filter,
 } from "lucide-react";
 import type { CompareResult } from "@/lib/db/benchmarks";
 
@@ -38,7 +40,7 @@ function ComparePageContent() {
   // State
   const [data, setData] = useState<CompareResult | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showOnlyCommon, setShowOnlyCommon] = useState(false);
+  const [selectedBenchmarks, setSelectedBenchmarks] = useState<string[]>([]);
   const [chartTab, setChartTab] = useState("radar");
 
   // URL 参数
@@ -59,8 +61,14 @@ function ComparePageContent() {
       );
       if (!response.ok) throw new Error("Failed to fetch");
 
-      const result = await response.json();
+      const result: CompareResult = await response.json();
       setData(result);
+      // 初始化选择：如果共有 benchmarks 足够多则选择共有，否则选择全部
+      if (result.commonBenchmarks.length >= 3) {
+        setSelectedBenchmarks(result.commonBenchmarks);
+      } else {
+        setSelectedBenchmarks(result.allBenchmarks);
+      }
     } catch (error) {
       console.error("Error fetching compare data:", error);
     } finally {
@@ -120,8 +128,9 @@ function ComparePageContent() {
     );
   }
 
-  const displayBenchmarks = showOnlyCommon
-    ? data.commonBenchmarks
+  // 使用用户选择的 benchmarks，如果为空则使用全部
+  const displayBenchmarks = selectedBenchmarks.length > 0
+    ? selectedBenchmarks
     : data.allBenchmarks;
 
   return (
@@ -224,36 +233,29 @@ function ComparePageContent() {
           </div>
         </motion.div>
 
-        {/* Coverage Info */}
+        {/* Benchmark Selection */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
           <Card className="border-border/50 bg-muted/30">
-            <CardContent className="py-4 px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <Info className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm">
-                  共 <strong>{data.allBenchmarks.length}</strong> 项 Benchmark，
-                  其中 <strong>{data.commonBenchmarks.length}</strong> 项所有模型都有数据
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={showOnlyCommon ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowOnlyCommon(true)}
-                >
-                  仅显示共有
-                </Button>
-                <Button
-                  variant={!showOnlyCommon ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowOnlyCommon(false)}
-                >
-                  显示全部
-                </Button>
+            <CardContent className="py-4 px-6">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <Filter className="h-5 w-5 text-muted-foreground shrink-0" />
+                  <span className="text-sm">
+                    共 <strong>{data.allBenchmarks.length}</strong> 项 Benchmark，
+                    其中 <strong>{data.commonBenchmarks.length}</strong> 项所有模型都有数据，
+                    当前已选择 <strong>{selectedBenchmarks.length}</strong> 项
+                  </span>
+                </div>
+                <BenchmarkMultiSelector
+                  allBenchmarks={data.allBenchmarks}
+                  commonBenchmarks={data.commonBenchmarks}
+                  selectedBenchmarks={selectedBenchmarks}
+                  onSelectionChange={setSelectedBenchmarks}
+                />
               </div>
             </CardContent>
           </Card>
@@ -366,7 +368,6 @@ function ComparePageContent() {
           <CompareTable
             models={data.models}
             benchmarks={displayBenchmarks}
-            showOnlyCommon={showOnlyCommon}
             onRemoveModel={handleRemoveModel}
           />
         </motion.div>
