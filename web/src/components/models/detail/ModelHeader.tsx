@@ -12,16 +12,7 @@ import {
   GitBranch
 } from "lucide-react";
 import type { ParsedModel } from "@/lib/db/models";
-
-// Check if URL is valid
-function isValidUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { ModelIcon } from "@/lib/icons";
 
 interface ModelHeaderProps {
   model: ParsedModel;
@@ -48,21 +39,13 @@ export function ModelHeader({ model }: ModelHeaderProps) {
         <div className="flex flex-col md:flex-row items-start gap-6">
           {/* Logo */}
           <div className="shrink-0 w-24 h-24 rounded-2xl bg-muted flex items-center justify-center overflow-hidden border border-border/50">
-            {model.logoUrl && isValidUrl(model.logoUrl) ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={model.logoUrl}
-                alt={model.name}
-                width={96}
-                height={96}
-                className="object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-            ) : (
-              <span className="text-4xl">🧠</span>
-            )}
+            <ModelIcon 
+              name={model.name}
+              developer={model.developer}
+              family={model.family}
+              size={56}
+              className="text-foreground"
+            />
           </div>
 
           {/* Info */}
@@ -125,4 +108,3 @@ export function ModelHeader({ model }: ModelHeaderProps) {
     </section>
   );
 }
-

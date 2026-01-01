@@ -8,23 +8,12 @@ import {
   Eye, 
   Wrench, 
   Code, 
-  Sparkles,
   ExternalLink,
   Lock,
   Unlock
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import type { ParsedModel } from "@/lib/db/models";
-
-// Check if URL is valid
-function isValidUrl(url: string): boolean {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
-  }
-}
+import { ModelIcon } from "@/lib/icons";
 
 interface ModelCardProps {
   model: ParsedModel;
@@ -50,21 +39,13 @@ export function ModelCard({ model, view = "grid" }: ModelCardProps) {
             <div className="flex items-center gap-4">
               {/* Logo */}
               <div className="shrink-0 w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-                {model.logoUrl && isValidUrl(model.logoUrl) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={model.logoUrl}
-                    alt={model.name}
-                    width={48}
-                    height={48}
-                    className="object-contain"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                    }}
-                  />
-                ) : (
-                  <Sparkles className="h-6 w-6 text-muted-foreground" />
-                )}
+                <ModelIcon 
+                  name={model.name}
+                  developer={model.developer}
+                  family={model.family}
+                  size={28}
+                  className="text-foreground"
+                />
               </div>
 
               {/* Info */}
@@ -144,21 +125,13 @@ export function ModelCard({ model, view = "grid" }: ModelCardProps) {
           <div className="flex items-start justify-between gap-3 mb-4">
             {/* Logo */}
             <div className="shrink-0 w-14 h-14 rounded-xl bg-muted flex items-center justify-center overflow-hidden">
-              {model.logoUrl && isValidUrl(model.logoUrl) ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={model.logoUrl}
-                  alt={model.name}
-                  width={56}
-                  height={56}
-                  className="object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              ) : (
-                <Sparkles className="h-7 w-7 text-muted-foreground" />
-              )}
+              <ModelIcon 
+                name={model.name}
+                developer={model.developer}
+                family={model.family}
+                size={32}
+                className="text-foreground"
+              />
             </div>
 
             {/* Type Badge */}
@@ -252,4 +225,3 @@ function formatNumber(num: number): string {
   }
   return num.toString();
 }
-
