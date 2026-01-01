@@ -22,6 +22,7 @@ import {
   Qwen,
   Yi,
   Minimax,
+  Kimi,
   Wenxin,
   Hunyuan,
   Doubao,
@@ -29,11 +30,8 @@ import {
   Perplexity,
   Claude,
   Gemini,
-  Spark,
   Grok,
   XAI,
-  HuggingFace,
-  Ollama,
 } from "@lobehub/icons";
 import { Sparkles } from "lucide-react";
 import type { FC, ReactNode } from "react";
@@ -59,51 +57,21 @@ const developerColorIcons: Record<string, IconWithColor> = {
   "Google DeepMind": Google as unknown as IconWithColor,
   "Mistral AI": Mistral as unknown as IconWithColor,
   "Mistral": Mistral as unknown as IconWithColor,
-
-  
-  // xAI
   "xAI": XAI as unknown as IconWithColor,
-  "X.AI": XAI as unknown as IconWithColor,
-  
-  // Chinese providers
-  "智谱AI": Zhipu as unknown as IconWithColor,
-  "Zhipu AI": Zhipu as unknown as IconWithColor,
-  "Zhipu": Zhipu as unknown as IconWithColor,
-  "Z AI": ZAI as unknown as IconWithColor,
-  "百川智能": Baichuan as unknown as IconWithColor,
-  "Baichuan": Baichuan as unknown as IconWithColor,
-  "月之暗面": Moonshot as unknown as IconWithColor,
-  "Moonshot AI": Moonshot as unknown as IconWithColor,
-  "Moonshot": Moonshot as unknown as IconWithColor,
-  "Kimi": Moonshot as unknown as IconWithColor,
-  "DeepSeek": DeepSeek as unknown as IconWithColor,
-  "深度求索": DeepSeek as unknown as IconWithColor,
-  "Alibaba": Alibaba as unknown as IconWithColor,
-  "阿里巴巴": Alibaba as unknown as IconWithColor,
-  "阿里云": Qwen as unknown as IconWithColor,
-  "Qwen": Qwen as unknown as IconWithColor,
-  "通义千问": Qwen as unknown as IconWithColor,
-  "零一万物": Yi as unknown as IconWithColor,
-  "01.AI": Yi as unknown as IconWithColor,
-  "Yi": Yi as unknown as IconWithColor,
-  "MiniMax": Minimax as unknown as IconWithColor,
-  "百度": Wenxin as unknown as IconWithColor,
-  "Baidu": Wenxin as unknown as IconWithColor,
-  "腾讯": Hunyuan as unknown as IconWithColor,
-  "Tencent": Hunyuan as unknown as IconWithColor,
-  "字节跳动": Doubao as unknown as IconWithColor,
-  "ByteDance": Doubao as unknown as IconWithColor,
-  "科大讯飞": Spark as unknown as IconWithColor,
-  "iFlytek": Spark as unknown as IconWithColor,
-  
-  // Other providers
   "NVIDIA": Nvidia as unknown as IconWithColor,
-  "Nvidia": Nvidia as unknown as IconWithColor,
   "Perplexity": Perplexity as unknown as IconWithColor,
-  "Perplexity AI": Perplexity as unknown as IconWithColor,
-  "Hugging Face": HuggingFace as unknown as IconWithColor,
-  "HuggingFace": HuggingFace as unknown as IconWithColor,
-  "Ollama": Ollama as unknown as IconWithColor,
+
+  // Chinese providers
+  "Zhipu AI": Zhipu as unknown as IconWithColor,
+  "Z AI": ZAI as unknown as IconWithColor,
+  "Baichuan": Baichuan as unknown as IconWithColor,
+  "Moonshot AI": Moonshot as unknown as IconWithColor,
+  "DeepSeek AI": DeepSeek as unknown as IconWithColor,
+  "Alibaba": Alibaba as unknown as IconWithColor,
+  "MiniMax": Minimax as unknown as IconWithColor,
+  "Baidu": Wenxin as unknown as IconWithColor,
+  "Tencent": Hunyuan as unknown as IconWithColor,
+  "ByteDance": Doubao as unknown as IconWithColor,
 };
 
 // Model family to Icon mapping (fallback if developer not found)
@@ -115,18 +83,13 @@ const familyColorIcons: Record<string, IconWithColor> = {
   "Qwen": Qwen as unknown as IconWithColor,
   "GLM": ZAI as unknown as IconWithColor,
   "Mistral": Mistral as unknown as IconWithColor,
-  "Mixtral": Mistral as unknown as IconWithColor,
   "DeepSeek": DeepSeek as unknown as IconWithColor,
-  "Yi": Yi as unknown as IconWithColor,
   "Baichuan": Baichuan as unknown as IconWithColor,
   "ERNIE": Wenxin as unknown as IconWithColor,
   "Doubao": Doubao as unknown as IconWithColor,
-  "Moonshot": Moonshot as unknown as IconWithColor,
-  "Kimi": Moonshot as unknown as IconWithColor,
+  "Kimi": Kimi as unknown as IconWithColor,
   "MiniMax": Minimax as unknown as IconWithColor,
-  "Spark": Spark as unknown as IconWithColor,
   "Hunyuan": Hunyuan as unknown as IconWithColor,
-  "Phi": OpenAI as unknown as IconWithColor,
   "Grok": Grok as unknown as IconWithColor,
 };
 
@@ -144,18 +107,12 @@ const modelKeywordColorIcons: Record<string, IconWithColor> = {
   "glm": ZAI as unknown as IconWithColor,
   "deepseek": DeepSeek as unknown as IconWithColor,
   "mistral": Mistral as unknown as IconWithColor,
-  "mixtral": Mistral as unknown as IconWithColor,
-  "codestral": Mistral as unknown as IconWithColor,
-  "yi-": Yi as unknown as IconWithColor,
   "baichuan": Baichuan as unknown as IconWithColor,
   "ernie": Wenxin as unknown as IconWithColor,
   "doubao": Doubao as unknown as IconWithColor,
-  "moonshot": Moonshot as unknown as IconWithColor,
-  "kimi": Moonshot as unknown as IconWithColor,
+  "kimi": Kimi as unknown as IconWithColor,
   "minimax": Minimax as unknown as IconWithColor,
-  "spark": Spark as unknown as IconWithColor,
   "hunyuan": Hunyuan as unknown as IconWithColor,
-  "phi-": OpenAI as unknown as IconWithColor,
   "grok": Grok as unknown as IconWithColor,
 };
 
@@ -213,7 +170,6 @@ export function ModelIcon({
       const ColorIcon = Icon.Color;
       return <ColorIcon size={size} className={className} />;
     }
-    // 如果没有 Color 变体，直接使用图标本身
     return <Icon size={size} className={className} />;
   }
   
