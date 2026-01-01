@@ -10,6 +10,7 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
+  Tooltip,
 } from "recharts";
 import { useId } from "react";
 import type { ParsedModel } from "@/lib/db/models";
@@ -23,9 +24,39 @@ const APPLE_BLUE = "#007AFF";
 const APPLE_BLUE_LIGHT = "#5AC8FA";
 const APPLE_PURPLE = "#AF52DE";
 
+// Custom Glassmorphism Tooltip
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: { benchmark: string } }>;
+}
+
+function GlassTooltip({ active, payload }: CustomTooltipProps) {
+  if (!active || !payload || !payload.length) return null;
+  
+  const data = payload[0];
+  
+  return (
+    <div 
+      className="
+        px-3 py-1.5 rounded-xl
+        bg-white/70 dark:bg-gray-900/70
+        backdrop-blur-xl backdrop-saturate-150
+        border border-white/20 dark:border-white/10
+        shadow-lg shadow-black/5 dark:shadow-black/20
+      "
+    >
+      <span 
+        className="text-sm font-semibold tabular-nums"
+        style={{ color: APPLE_BLUE }}
+      >
+        {data.value.toFixed(1)}
+      </span>
+    </div>
+  );
+}
+
 export function BenchmarksCard({ model }: BenchmarksCardProps) {
   const gradientId = useId();
-  const glowId = useId();
   const benchmarkEntries = Object.entries(model.benchmarks);
   
   // Select key benchmarks for radar chart (max 8)
@@ -73,30 +104,26 @@ export function BenchmarksCard({ model }: BenchmarksCardProps) {
       <CardContent className="space-y-6">
         {/* Apple-styled Radar Chart */}
         {radarData.length >= 3 && (
-          <div className="h-80 -mx-4">
+          <div className="h-80 -mx-4 select-none">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart 
                 data={radarData} 
                 margin={{ top: 20, right: 40, bottom: 20, left: 40 }}
+                // Remove focus outline/border
+                style={{ outline: 'none' }}
               >
-                {/* SVG Definitions for gradients and effects */}
+                {/* SVG Definitions for gradients */}
                 <defs>
                   {/* Blue to Purple gradient fill */}
                   <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor={APPLE_BLUE} stopOpacity={0.6} />
-                    <stop offset="50%" stopColor={APPLE_BLUE_LIGHT} stopOpacity={0.5} />
-                    <stop offset="100%" stopColor={APPLE_PURPLE} stopOpacity={0.4} />
+                    <stop offset="0%" stopColor={APPLE_BLUE} stopOpacity={0.5} />
+                    <stop offset="50%" stopColor={APPLE_BLUE_LIGHT} stopOpacity={0.4} />
+                    <stop offset="100%" stopColor={APPLE_PURPLE} stopOpacity={0.35} />
                   </linearGradient>
                   
-                  {/* Glow effect for dark mode */}
-                  <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
-                    <feGaussianBlur stdDeviation="3" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                  
-                  {/* Stroke gradient */}
+                  {/* Brighter stroke gradient */}
                   <linearGradient id={`${gradientId}-stroke`} x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor={APPLE_BLUE} />
+                    <stop offset="0%" stopColor={APPLE_BLUE_LIGHT} />
                     <stop offset="100%" stopColor={APPLE_PURPLE} />
                   </linearGradient>
                 </defs>
@@ -155,30 +182,38 @@ export function BenchmarksCard({ model }: BenchmarksCardProps) {
                   tickLine={false}
                 />
                 
+                {/* Custom Glassmorphism Tooltip */}
+                <Tooltip 
+                  content={<GlassTooltip />}
+                  cursor={false}
+                  wrapperStyle={{ outline: 'none' }}
+                />
+                
                 {/* Main Radar Area */}
                 <Radar
                   name={model.name}
                   dataKey="value"
                   stroke={`url(#${gradientId}-stroke)`}
                   fill={`url(#${gradientId})`}
-                  strokeWidth={2.5}
+                  strokeWidth={2}
                   strokeLinejoin="round"
                   strokeLinecap="round"
-                  className="dark:drop-shadow-[0_0_8px_rgba(0,122,255,0.5)]"
-                  dot={{
-                    r: 4,
-                    fill: APPLE_BLUE,
-                    stroke: "#fff",
-                    strokeWidth: 2,
-                    className: "dark:stroke-gray-900 drop-shadow-sm",
-                  }}
+                  className="dark:drop-shadow-[0_0_8px_rgba(0,122,255,0.5)] [&:focus]:outline-none"
+                  // No default dots - cleaner look
+                  dot={false}
+                  // Only show dot on hover with glow effect
                   activeDot={{
-                    r: 6,
+                    r: 5,
                     fill: APPLE_BLUE,
                     stroke: "#fff",
                     strokeWidth: 2,
-                    className: "dark:stroke-gray-900 drop-shadow-md",
+                    style: {
+                      filter: 'drop-shadow(0 2px 4px rgba(0, 122, 255, 0.4))',
+                    },
+                    className: "dark:stroke-gray-800",
                   }}
+                  // Remove focus rectangle
+                  style={{ outline: 'none' }}
                 />
               </RadarChart>
             </ResponsiveContainer>

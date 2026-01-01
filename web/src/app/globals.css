@@ -148,6 +148,30 @@
   }
 }
 
+@layer components {
+  /* Recharts - Remove focus outlines and selection boxes */
+  .recharts-wrapper,
+  .recharts-surface,
+  .recharts-radar-polygon,
+  .recharts-radar,
+  .recharts-layer {
+    outline: none !important;
+  }
+  
+  .recharts-wrapper:focus,
+  .recharts-surface:focus,
+  .recharts-radar-polygon:focus,
+  .recharts-radar:focus {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+  
+  /* Remove default Recharts tooltip styles */
+  .recharts-tooltip-wrapper {
+    outline: none !important;
+  }
+}
+
 @layer utilities {
   /* Glassmorphism utility classes */
   .glass {
