@@ -15,6 +15,7 @@ import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ParsedModel } from "@/lib/db/models";
+import { CustomLegend } from "./CustomLegend";
 
 // Apple 风格颜色
 const CHART_COLORS = [
@@ -266,10 +267,9 @@ export function CompareRadarChart({ models, benchmarks }: CompareRadarChartProps
               <Tooltip content={<GlassTooltip />} cursor={false} />
 
               <Legend
+                content={<CustomLegend />}
                 wrapperStyle={{
-                  paddingTop: 20,
-                  fontSize: 12,
-                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                  paddingTop: 24,
                 }}
               />
 

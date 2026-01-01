@@ -12,6 +12,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import type { ParsedModel } from "@/lib/db/models";
+import { CustomLegend } from "./CustomLegend";
 
 // Apple 风格颜色
 const CHART_COLORS = [
@@ -182,10 +183,9 @@ export function CompareBarChart({
           />
           <Tooltip content={<GlassTooltip />} cursor={{ fill: "transparent" }} />
           <Legend
+            content={<CustomLegend />}
             wrapperStyle={{
-              paddingTop: 20,
-              fontSize: 12,
-              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+              paddingTop: 24,
             }}
           />
           {models.map((model, index) => (

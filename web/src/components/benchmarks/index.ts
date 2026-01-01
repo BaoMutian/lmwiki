@@ -9,4 +9,5 @@ export { CompareBarChart } from "./CompareBarChart";
 export { CompareLineChart } from "./CompareLineChart";
 export { CompareBubbleChart } from "./CompareBubbleChart";
 export { CompareHeatmap } from "./CompareHeatmap";
+export { CustomLegend } from "./CustomLegend";
 
