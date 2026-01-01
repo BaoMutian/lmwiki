@@ -139,7 +139,7 @@ export function BenchmarksCard({ model }: BenchmarksCardProps) {
                 {/* Angle Axis - Benchmark labels */}
                 <PolarAngleAxis 
                   dataKey="benchmark"
-                  tick={({ payload, x, y, cx, cy, ...rest }) => {
+                  tick={({ payload, x, y, cx, cy }) => {
                     // Calculate angle for text positioning
                     const radius = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
                     const angle = Math.atan2(y - cy, x - cx);
@@ -148,7 +148,6 @@ export function BenchmarksCard({ model }: BenchmarksCardProps) {
                     
                     return (
                       <text
-                        {...rest}
                         x={textX}
                         y={textY}
                         textAnchor="middle"
