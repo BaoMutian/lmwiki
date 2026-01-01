@@ -298,11 +298,7 @@ function ComparePageContent() {
                 <TabsContent value="radar">
                   <CompareRadarChart
                     models={data.models}
-                    benchmarks={
-                      data.commonBenchmarks.length >= 3
-                        ? data.commonBenchmarks.slice(0, 8)
-                        : displayBenchmarks.slice(0, 8)
-                    }
+                    benchmarks={displayBenchmarks.slice(0, 8)}
                   />
                 </TabsContent>
 
