@@ -1,0 +1,89 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../data/lmwiki.db"
+}
+
+model Model {
+  id        Int      @id @default(autoincrement())
+  
+  // Identity
+  name          String
+  shortName     String?   @map("short_name")
+  slug          String    @unique
+  developer     String
+  releaseDate   String?   @map("release_date")
+  version       String?
+  family        String?
+  modelSeries   String?   @map("model_series")
+  branchType    String?   @map("branch_type")
+  description   String?
+  logoUrl       String?   @map("logo_url")
+  
+  // Model type
+  modelType     String    @map("model_type") // "open" or "closed"
+  
+  // Technical Specs
+  architecture        String?
+  paramsTotal         Float?    @map("params_total")
+  paramsActive        Float?    @map("params_active")
+  contextWindow       Int?      @map("context_window")
+  maxOutputTokens     Int?      @map("max_output_tokens")
+  trainingTokens      Float?    @map("training_tokens")
+  vocabSize           Int?      @map("vocab_size")
+  knowledgeCutoff     String?   @map("knowledge_cutoff")
+  fineTuningMethod    String?   @map("fine_tuning_method") // JSON array as string
+  layers              Int?
+  attentionMechanism  String?   @map("attention_mechanism")
+  
+  // Commercial & Licensing
+  license               String?
+  commercialUseAllowed  Boolean?  @map("commercial_use_allowed")
+  pricingInput          Float?    @map("pricing_input")
+  pricingOutput         Float?    @map("pricing_output")
+  freeTierAvailable     Boolean?  @map("free_tier_available")
+  
+  // Capabilities & Modalities
+  modalitiesInput   String?   @map("modalities_input")   // JSON array as string
+  modalitiesOutput  String?   @map("modalities_output")  // JSON array as string
+  languages         String?                               // JSON array as string
+  supportsToolUse   Boolean?  @map("supports_tool_use")
+  supportsJsonMode  Boolean?  @map("supports_json_mode")
+  supportsVision    Boolean?  @map("supports_vision")
+  codingCapable     Boolean?  @map("coding_capable")
+  supportsReasoning Boolean?  @map("supports_reasoning")
+  
+  // Deployment & Hardware (open source only)
+  modelSize               Float?    @map("model_size")
+  tensorType              String?   @map("tensor_type")
+  modelFormat             String?   @map("model_format")
+  numFiles                Int?      @map("num_files")
+  quantizationAvailable   String?   @map("quantization_available")  // JSON array as string
+  inferenceFrameworks     String?   @map("inference_frameworks")    // JSON array as string
+  
+  // Benchmarks
+  scoreArenaElo   Int?      @map("score_arena_elo")
+  benchmarks      String?   // JSON object as string
+  
+  // Resources & Links
+  urlPaper      String?   @map("url_paper")
+  urlHuggingface String?  @map("url_huggingface")
+  urlDemo       String?   @map("url_demo")
+  urlGithub     String?   @map("url_github")
+  urlApiDocs    String?   @map("url_api_docs")
+  urlBlog       String?   @map("url_blog")
+  urlWebsite    String?   @map("url_website")
+  
+  // Metadata
+  metadata    String?   // JSON object as string
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  
+  @@map("models")
+}
