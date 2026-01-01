@@ -16,6 +16,29 @@ import * as readline from "readline";
 // Initialize Prisma Client
 const prisma = new PrismaClient();
 
+/**
+ * Extract base model name and variant type from model name
+ * Examples:
+ *   "GPT-5.2 (high)" -> { baseModelName: "GPT-5.2", variantType: "high" }
+ *   "GLM-4.7 (Reasoning)" -> { baseModelName: "GLM-4.7", variantType: "Reasoning" }
+ *   "Claude 3.5 Sonnet" -> { baseModelName: "Claude 3.5 Sonnet", variantType: null }
+ */
+function extractVariantInfo(name: string): { baseModelName: string; variantType: string | null } {
+  // Match pattern: "Model Name (variant)"
+  const match = name.match(/^(.+?)\s*\(([^)]+)\)$/);
+  if (match) {
+    return {
+      baseModelName: match[1].trim(),
+      variantType: match[2].trim(),
+    };
+  }
+  // No variant in name
+  return {
+    baseModelName: name,
+    variantType: null,
+  };
+}
+
 interface JsonlModel {
   model_type: string;
   name: string;
@@ -127,7 +150,11 @@ async function importJsonl() {
     const batch = models.slice(i, i + batchSize);
     
     await prisma.model.createMany({
-      data: batch.map((data) => ({
+      data: batch.map((data) => {
+        // Extract variant info from model name
+        const { baseModelName, variantType } = extractVariantInfo(data.name);
+        
+        return {
         name: data.name,
         shortName: data.short_name || null,
         slug: data.slug,
@@ -140,6 +167,8 @@ async function importJsonl() {
         description: data.description || null,
         logoUrl: data.logo_url || null,
         modelType: data.model_type,
+        baseModelName: baseModelName,
+        variantType: variantType,
         architecture: data.architecture || null,
         paramsTotal: data.params_total ?? null,
         paramsActive: data.params_active ?? null,
@@ -180,7 +209,7 @@ async function importJsonl() {
         urlBlog: data.url_blog || null,
         urlWebsite: data.url_website || null,
         metadata: data.metadata ?? null,
-      })),
+      }}),
       skipDuplicates: true,
     });
 

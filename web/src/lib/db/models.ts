@@ -231,3 +231,24 @@ export async function getModelsByFamily(family: string): Promise<ParsedModel[]> 
 
   return models.map(parseModel);
 }
+
+// Get all variants of a model by base model name
+export async function getModelVariants(baseModelName: string): Promise<ParsedModel[]> {
+  const models = await prisma.model.findMany({
+    where: { baseModelName },
+    orderBy: [
+      { variantType: "asc" },
+      { releaseDate: "desc" },
+    ],
+  });
+
+  return models.map(parseModel);
+}
+
+// Variant info type for UI display
+export interface VariantInfo {
+  slug: string;
+  name: string;
+  variantType: string | null;
+  benchmarks: Record<string, number>;
+}

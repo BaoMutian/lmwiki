@@ -17,17 +17,21 @@ model Model {
   id        Int      @id @default(autoincrement())
   
   // Identity (基础身份信息)
-  name          String
-  shortName     String?   @map("short_name")
-  slug          String    @unique
-  developer     String
-  releaseDate   String?   @map("release_date")
-  version       String?
-  family        String?
-  modelSeries   String?   @map("model_series")
-  branchType    String?   @map("branch_type")
-  description   String?   @db.Text
-  logoUrl       String?   @map("logo_url")
+  name            String
+  shortName       String?   @map("short_name")
+  slug            String    @unique
+  developer       String
+  releaseDate     String?   @map("release_date")
+  version         String?
+  family          String?
+  modelSeries     String?   @map("model_series")
+  branchType      String?   @map("branch_type")
+  description     String?   @db.Text
+  logoUrl         String?   @map("logo_url")
+  
+  // Variant grouping (变体分组)
+  baseModelName   String?   @map("base_model_name")  // e.g., "GPT-5.2" extracted from "GPT-5.2 (high)"
+  variantType     String?   @map("variant_type")     // e.g., "high", "medium", "reasoning"
   
   // Model type (模型类型)
   modelType     String    @map("model_type") // "open" or "closed"
@@ -96,6 +100,7 @@ model Model {
   @@index([family])
   @@index([modelType])
   @@index([releaseDate])
+  @@index([baseModelName])
 }
 
 // ==========================================

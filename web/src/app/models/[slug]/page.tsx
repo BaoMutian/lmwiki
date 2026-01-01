@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getModelBySlug, getModelsByFamily } from "@/lib/db/models";
+import { getModelBySlug, getModelsByFamily, getModelVariants } from "@/lib/db/models";
 import { ModelHeader } from "@/components/models/detail/ModelHeader";
 import { TechSpecsCard } from "@/components/models/detail/TechSpecsCard";
 import { CapabilitiesCard } from "@/components/models/detail/CapabilitiesCard";
@@ -8,6 +8,7 @@ import { ResourcesCard } from "@/components/models/detail/ResourcesCard";
 import { PricingCard } from "@/components/models/detail/PricingCard";
 import { FamilyTimeline } from "@/components/models/detail/FamilyTimeline";
 import { ActionBar } from "@/components/models/detail/ActionBar";
+import { VariantSwitcher } from "@/components/models/detail/VariantSwitcher";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -42,13 +43,15 @@ export default async function ModelDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Get family models for timeline
-  const familyModels = model.family
-    ? await getModelsByFamily(model.family)
-    : [];
+  // Get family models for timeline and variants
+  const [familyModels, variants] = await Promise.all([
+    model.family ? getModelsByFamily(model.family) : Promise.resolve([]),
+    model.baseModelName ? getModelVariants(model.baseModelName) : Promise.resolve([]),
+  ]);
 
   const hasBenchmarks = Object.keys(model.benchmarks).length > 0;
   const hasPricing = model.pricingInput !== null || model.pricingOutput !== null;
+  const hasVariants = variants.length > 1;
 
   return (
     <div className="min-h-screen pb-28">
@@ -57,6 +60,17 @@ export default async function ModelDetailPage({ params }: PageProps) {
 
       {/* Main Content - Increased spacing */}
       <div className="container mx-auto px-4 py-10 lg:py-12">
+        {/* Variant Switcher - Shows when model has variants */}
+        {hasVariants && (
+          <div className="mb-8">
+            <VariantSwitcher
+              variants={variants}
+              currentSlug={model.slug}
+              baseModelName={model.baseModelName!}
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
           {/* Main Column - 8 cols */}
           <div className="lg:col-span-8 space-y-8">
