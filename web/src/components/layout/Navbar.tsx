@@ -49,7 +49,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/", label: "模型百科" },
-    { href: "/benchmarks", label: "跑分实验室", disabled: true },
+    { href: "/benchmarks", label: "跑分实验室" },
     { href: "/community", label: "社区评价", disabled: true },
   ];
 
@@ -80,7 +80,7 @@ export function Navbar() {
               href={link.disabled ? "#" : link.href}
               className={cn(
                 "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                pathname === link.href
+                (pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href)))
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                 link.disabled && "opacity-50 cursor-not-allowed pointer-events-none"
@@ -172,7 +172,7 @@ export function Navbar() {
                   onClick={() => !link.disabled && setIsMobileMenuOpen(false)}
                   className={cn(
                     "px-4 py-3 rounded-lg text-sm font-medium transition-colors",
-                    pathname === link.href
+                    (pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href)))
                       ? "bg-primary/10 text-primary"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
                     link.disabled && "opacity-50 cursor-not-allowed"
