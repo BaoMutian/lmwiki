@@ -30,7 +30,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `${model.name} - LMWiki`,
       description: model.description || `探索 ${model.name} 的详细信息`,
-      images: model.logoUrl ? [model.logoUrl] : undefined,
     },
   };
 }
@@ -48,21 +47,24 @@ export default async function ModelDetailPage({ params }: PageProps) {
     ? await getModelsByFamily(model.family)
     : [];
 
+  const hasBenchmarks = Object.keys(model.benchmarks).length > 0;
+  const hasPricing = model.pricingInput !== null || model.pricingOutput !== null;
+
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-28">
       {/* Header Section */}
       <ModelHeader model={model} />
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Technical Specs */}
+      {/* Main Content - Increased spacing */}
+      <div className="container mx-auto px-4 py-10 lg:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
+          {/* Main Column - 8 cols */}
+          <div className="lg:col-span-8 space-y-8">
+            {/* Technical Specs - Only renders if has data */}
             <TechSpecsCard model={model} />
 
             {/* Benchmarks with Radar Chart */}
-            {Object.keys(model.benchmarks).length > 0 && (
+            {hasBenchmarks && (
               <BenchmarksCard model={model} />
             )}
 
@@ -76,19 +78,19 @@ export default async function ModelDetailPage({ params }: PageProps) {
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Capabilities */}
+          {/* Sidebar - 4 cols */}
+          <aside className="lg:col-span-4 space-y-6">
+            {/* Capabilities - Only shows enabled ones */}
             <CapabilitiesCard model={model} />
 
             {/* Pricing */}
-            {(model.pricingInput !== null || model.pricingOutput !== null) && (
+            {hasPricing && (
               <PricingCard model={model} />
             )}
 
             {/* Resources */}
             <ResourcesCard model={model} />
-          </div>
+          </aside>
         </div>
       </div>
 
@@ -97,4 +99,3 @@ export default async function ModelDetailPage({ params }: PageProps) {
     </div>
   );
 }
-
