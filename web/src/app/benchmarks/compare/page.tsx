@@ -17,7 +17,6 @@ import { CompareLineChart } from "@/components/benchmarks/CompareLineChart";
 import { CompareBubbleChart } from "@/components/benchmarks/CompareBubbleChart";
 import { CompareHeatmap } from "@/components/benchmarks/CompareHeatmap";
 import { BenchmarkMultiSelector } from "@/components/benchmarks/BenchmarkMultiSelector";
-import { cn } from "@/lib/utils";
 import {
   ArrowLeft,
   GitCompare,

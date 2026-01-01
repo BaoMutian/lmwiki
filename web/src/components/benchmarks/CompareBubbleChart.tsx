@@ -136,7 +136,6 @@ export function CompareBubbleChart({
       ],
       color: CHART_COLORS[index % CHART_COLORS.length],
       name: model.baseModelName || model.name,
-      slug: model.slug,
     };
   });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,8 +20,6 @@ import {
 import { cn } from "@/lib/utils";
 import {
   ChevronDown,
-  Check,
-  Filter,
   CheckCheck,
   XCircle,
   ListFilter,
