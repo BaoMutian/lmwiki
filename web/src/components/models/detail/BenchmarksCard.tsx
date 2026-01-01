@@ -11,13 +11,21 @@ import {
   PolarRadiusAxis,
   Radar,
 } from "recharts";
+import { useId } from "react";
 import type { ParsedModel } from "@/lib/db/models";
 
 interface BenchmarksCardProps {
   model: ParsedModel;
 }
 
+// Apple-style colors
+const APPLE_BLUE = "#007AFF";
+const APPLE_BLUE_LIGHT = "#5AC8FA";
+const APPLE_PURPLE = "#AF52DE";
+
 export function BenchmarksCard({ model }: BenchmarksCardProps) {
+  const gradientId = useId();
+  const glowId = useId();
   const benchmarkEntries = Object.entries(model.benchmarks);
   
   // Select key benchmarks for radar chart (max 8)
@@ -63,39 +71,114 @@ export function BenchmarksCard({ model }: BenchmarksCardProps) {
         )}
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Radar Chart */}
+        {/* Apple-styled Radar Chart */}
         {radarData.length >= 3 && (
-          <div className="h-72 -mx-2">
+          <div className="h-80 -mx-4">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
+              <RadarChart 
+                data={radarData} 
+                margin={{ top: 20, right: 40, bottom: 20, left: 40 }}
+              >
+                {/* SVG Definitions for gradients and effects */}
+                <defs>
+                  {/* Blue to Purple gradient fill */}
+                  <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor={APPLE_BLUE} stopOpacity={0.6} />
+                    <stop offset="50%" stopColor={APPLE_BLUE_LIGHT} stopOpacity={0.5} />
+                    <stop offset="100%" stopColor={APPLE_PURPLE} stopOpacity={0.4} />
+                  </linearGradient>
+                  
+                  {/* Glow effect for dark mode */}
+                  <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  
+                  {/* Stroke gradient */}
+                  <linearGradient id={`${gradientId}-stroke`} x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor={APPLE_BLUE} />
+                    <stop offset="100%" stopColor={APPLE_PURPLE} />
+                  </linearGradient>
+                </defs>
+
+                {/* Polar Grid - Ultra subtle */}
                 <PolarGrid 
-                  stroke="hsl(var(--muted-foreground))" 
-                  strokeOpacity={0.15}
-                  strokeDasharray="3 3"
+                  gridType="polygon"
+                  stroke="currentColor"
+                  className="text-gray-200 dark:text-gray-700/50"
+                  strokeWidth={0.5}
                 />
+                
+                {/* Angle Axis - Benchmark labels */}
                 <PolarAngleAxis 
-                  dataKey="benchmark" 
-                  tick={{ 
-                    fill: "hsl(var(--muted-foreground))", 
-                    fontSize: 11,
-                    fontWeight: 500
+                  dataKey="benchmark"
+                  tick={({ payload, x, y, cx, cy, ...rest }) => {
+                    // Calculate angle for text positioning
+                    const radius = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+                    const angle = Math.atan2(y - cy, x - cx);
+                    const textX = cx + (radius + 12) * Math.cos(angle);
+                    const textY = cy + (radius + 12) * Math.sin(angle);
+                    
+                    return (
+                      <text
+                        {...rest}
+                        x={textX}
+                        y={textY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="fill-gray-500 dark:fill-gray-400"
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 500,
+                          fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif',
+                        }}
+                      >
+                        {payload.value}
+                      </text>
+                    );
                   }}
                   tickLine={false}
-                />
-                <PolarRadiusAxis 
-                  angle={30} 
-                  domain={[0, 100]} 
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 9 }}
-                  tickCount={5}
                   axisLine={false}
                 />
+                
+                {/* Radius Axis - Score scale */}
+                <PolarRadiusAxis 
+                  angle={90} 
+                  domain={[0, 100]} 
+                  tick={{
+                    fontSize: 9,
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif',
+                  }}
+                  className="[&_text]:fill-gray-400 dark:[&_text]:fill-gray-500"
+                  tickCount={5}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                
+                {/* Main Radar Area */}
                 <Radar
                   name={model.name}
                   dataKey="value"
-                  stroke="hsl(var(--primary))"
-                  fill="hsl(var(--primary))"
-                  fillOpacity={0.2}
-                  strokeWidth={2}
+                  stroke={`url(#${gradientId}-stroke)`}
+                  fill={`url(#${gradientId})`}
+                  strokeWidth={2.5}
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  className="dark:drop-shadow-[0_0_8px_rgba(0,122,255,0.5)]"
+                  dot={{
+                    r: 4,
+                    fill: APPLE_BLUE,
+                    stroke: "#fff",
+                    strokeWidth: 2,
+                    className: "dark:stroke-gray-900 drop-shadow-sm",
+                  }}
+                  activeDot={{
+                    r: 6,
+                    fill: APPLE_BLUE,
+                    stroke: "#fff",
+                    strokeWidth: 2,
+                    className: "dark:stroke-gray-900 drop-shadow-md",
+                  }}
                 />
               </RadarChart>
             </ResponsiveContainer>
@@ -111,10 +194,13 @@ export function BenchmarksCard({ model }: BenchmarksCardProps) {
             >
               <span className="text-sm font-medium truncate mr-3">{name}</span>
               <div className="flex items-center gap-2.5 shrink-0">
-                <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="w-20 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-primary/80 to-primary rounded-full transition-all"
-                    style={{ width: `${Math.min(value, 100)}%` }}
+                    className="h-full rounded-full transition-all"
+                    style={{ 
+                      width: `${Math.min(value, 100)}%`,
+                      background: `linear-gradient(90deg, ${APPLE_BLUE} 0%, ${APPLE_PURPLE} 100%)`
+                    }}
                   />
                 </div>
                 <span className="text-sm font-semibold w-10 text-right tabular-nums">
