@@ -89,6 +89,19 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // 获取 OpenRouter API Key（用于知识截止查询）
+    if (req.url === '/api/openrouter-key' && req.method === 'GET') {
+        const apiKey = process.env.OPENROUTER_API_KEY;
+        if (apiKey) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ key: apiKey }));
+        } else {
+            res.writeHead(404, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: '未配置 API Key' }));
+        }
+        return;
+    }
+
     // 翻译 API
     if (req.url === '/api/translate' && req.method === 'POST') {
         let body = '';

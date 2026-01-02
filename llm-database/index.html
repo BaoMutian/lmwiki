@@ -98,22 +98,21 @@
 						<div class="tab-content-wrapper">
 						<!-- 基础信息 -->
 						<div class="tab-content active" id="tab-basic">
-							<!-- OpenRouter 自动填充 -->
-							<div class="form-row openrouter-row">
-								<label for="openrouter_id">OpenRouter ID</label>
-								<div class="openrouter-input">
-									<input
-										type="text"
-										id="openrouter_id"
-										placeholder="如: google/gemini-2.5-pro"
-									/>
-									<button
-										type="button"
-										id="fetch-openrouter"
-										class="btn btn-sm btn-primary"
-									>
-										获取数据
-									</button>
+							<!-- API 自动填充区 -->
+							<div class="api-fetch-section">
+								<div class="api-row">
+									<label for="openrouter_id">OpenRouter ID</label>
+									<div class="api-input">
+										<input type="text" id="openrouter_id" placeholder="google/gemini-2.5-pro" />
+										<button type="button" id="fetch-openrouter" class="btn btn-sm btn-primary">获取</button>
+									</div>
+								</div>
+								<div class="api-row">
+									<label for="huggingface_id">HuggingFace ID</label>
+									<div class="api-input">
+										<input type="text" id="huggingface_id" placeholder="meta-llama/Llama-3.1-8B-Instruct" />
+										<button type="button" id="fetch-huggingface" class="btn btn-sm btn-primary">获取</button>
+									</div>
 								</div>
 							</div>
 							<div class="form-row">
@@ -270,6 +269,10 @@
 							<div class="form-row">
 								<label for="layers">层数</label>
 								<input type="number" id="layers" />
+							</div>
+							<div class="form-row">
+								<label for="attention_heads">注意力头数</label>
+								<input type="number" id="attention_heads" />
 							</div>
 							<div class="form-row">
 								<label for="attention_mechanism">注意力机制</label>
@@ -596,6 +599,16 @@
 							<div class="form-row">
 								<label for="url_huggingface">HuggingFace</label>
 								<input type="url" id="url_huggingface" />
+							</div>
+							<div class="form-row inline-fields">
+								<div class="inline-field">
+									<label for="hf_downloads">HF 下载量</label>
+									<input type="number" id="hf_downloads" />
+								</div>
+								<div class="inline-field">
+									<label for="hf_likes">HF 点赞数</label>
+									<input type="number" id="hf_likes" />
+								</div>
 							</div>
 							<div class="form-row">
 								<label for="url_github">GitHub</label>

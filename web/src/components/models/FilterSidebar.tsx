@@ -47,7 +47,12 @@ export function FilterSidebar({ searchParams }: FilterSidebarProps) {
   useEffect(() => {
     fetch("/api/filters")
       .then((res) => res.json())
-      .then((data) => setOptions(data))
+      .then((data) => {
+        // Validate response structure
+        if (data && data.families && data.developers && data.architectures) {
+          setOptions(data);
+        }
+      })
       .catch(console.error);
   }, []);
 

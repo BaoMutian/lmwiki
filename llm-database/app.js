@@ -35,12 +35,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 function loadMaintainedStatus() {
     try {
         const stored = localStorage.getItem('llm_maintained');
-    if (stored) {
+        if (stored) {
             maintainedSet = new Set(JSON.parse(stored));
         }
-        } catch (e) {
+    } catch (e) {
         console.warn('Failed to load maintained status');
-}
+    }
 }
 
 // 保存维护状态
@@ -49,7 +49,7 @@ function saveMaintainedStatus() {
 }
 
 // 切换维护状态
-window.toggleMaintained = function(slug) {
+window.toggleMaintained = function (slug) {
     if (maintainedSet.has(slug)) {
         maintainedSet.delete(slug);
     } else {
@@ -70,7 +70,7 @@ function collectKnownBenchmarks() {
     models.forEach(m => {
         if (m.benchmarks) {
             Object.keys(m.benchmarks).forEach(name => allNames.add(name));
-    }
+        }
     });
     knownBenchmarks = [...allNames].sort();
 }
@@ -84,7 +84,7 @@ function setupEventListeners() {
         document.getElementById('panel-title').textContent = '新增模型';
         document.getElementById('delete-btn').style.display = 'none';
         openPanel();
-        });
+    });
 
     // 关闭面板
     document.getElementById('close-panel').addEventListener('click', closePanel);
@@ -139,6 +139,9 @@ function setupEventListeners() {
 
     // OpenRouter 自动填充
     document.getElementById('fetch-openrouter').addEventListener('click', fetchFromOpenRouter);
+
+    // HuggingFace 自动填充
+    document.getElementById('fetch-huggingface').addEventListener('click', fetchFromHuggingFace);
 
     // 翻译按钮
     document.getElementById('translate-btn').addEventListener('click', translateDescription);
@@ -243,7 +246,7 @@ function getFilteredModels() {
 
     return models.filter(m => {
         // 搜索匹配
-        const matchSearch = !search || 
+        const matchSearch = !search ||
             (m.name || '').toLowerCase().includes(search) ||
             (m.developer || '').toLowerCase().includes(search) ||
             (m.family || '').toLowerCase().includes(search) ||
@@ -257,7 +260,7 @@ function getFilteredModels() {
 
         // 维护状态筛选
         const maintained = isMaintained(m);
-        const matchMaintained = !maintainedFilter || 
+        const matchMaintained = !maintainedFilter ||
             (maintainedFilter === 'yes' && maintained) ||
             (maintainedFilter === 'no' && !maintained);
 
@@ -272,20 +275,20 @@ function updateDeveloperFilter() {
 }
 
 // 编辑模型
-window.editModel = function(index) {
+window.editModel = function (index) {
     editIndex = index;
     const model = models[index];
-    
+
     document.getElementById('panel-title').textContent = '编辑模型';
     document.getElementById('delete-btn').style.display = 'block';
-    
+
     populateForm(model);
     openPanel();
     renderTable(); // 更新选中状态
 };
 
 // 确认删除
-window.confirmDelete = function(index) {
+window.confirmDelete = function (index) {
     if (confirm('确定要删除这个模型吗？')) {
         models.splice(index, 1);
         saveModels();
@@ -301,7 +304,7 @@ window.confirmDelete = function(index) {
 // 表单处理
 async function handleSubmit(e) {
     e.preventDefault();
-    
+
     const model = collectFormData();
 
     if (editIndex >= 0) {
@@ -335,6 +338,7 @@ function collectFormData() {
     return {
         // 基础信息
         openrouter_id: val('openrouter_id'),
+        huggingface_id: val('huggingface_id'),
         model_type: isOpen ? 'open' : 'closed',
         name: val('name'),
         short_name: val('short_name'),
@@ -359,6 +363,7 @@ function collectFormData() {
         vocab_size: num('vocab_size'),
         knowledge_cutoff: val('knowledge_cutoff'),
         layers: num('layers'),
+        attention_heads: num('attention_heads'),
         attention_mechanism: val('attention_mechanism'),
         fine_tuning_method: checked('fine_tuning_method'),
 
@@ -388,6 +393,8 @@ function collectFormData() {
         // 链接
         url_paper: val('url_paper'),
         url_huggingface: val('url_huggingface'),
+        hf_downloads: num('hf_downloads'),
+        hf_likes: num('hf_likes'),
         url_github: val('url_github'),
         url_demo: val('url_demo'),
         url_api_docs: val('url_api_docs'),
@@ -408,6 +415,7 @@ function collectFormData() {
 function populateForm(model) {
     // OpenRouter ID
     setVal('openrouter_id', model.openrouter_id);
+    setVal('huggingface_id', model.huggingface_id);
 
     // 类型
     document.querySelector(`input[name="model_type"][value="${model.model_type || 'open'}"]`).checked = true;
@@ -436,6 +444,7 @@ function populateForm(model) {
     setVal('vocab_size', model.vocab_size);
     setVal('knowledge_cutoff', model.knowledge_cutoff);
     setVal('layers', model.layers);
+    setVal('attention_heads', model.attention_heads);
     setVal('attention_mechanism', model.attention_mechanism);
     setChecked('fine_tuning_method', model.fine_tuning_method || []);
 
@@ -465,6 +474,8 @@ function populateForm(model) {
     // 链接
     setVal('url_paper', model.url_paper);
     setVal('url_huggingface', model.url_huggingface);
+    setVal('hf_downloads', model.hf_downloads);
+    setVal('hf_likes', model.hf_likes);
     setVal('url_github', model.url_github);
     setVal('url_demo', model.url_demo);
     setVal('url_api_docs', model.url_api_docs);
@@ -528,7 +539,7 @@ function renderBenchmarks() {
     `).join('');
 }
 
-window.removeBenchmark = function(name) {
+window.removeBenchmark = function (name) {
     delete benchmarks[name];
     renderBenchmarks();
 };
@@ -549,7 +560,7 @@ function exportData() {
     if (models.length === 0) {
         toast('没有数据可导出');
         return;
-}
+    }
     const jsonl = models.map(m => JSON.stringify(m)).join('\n');
     const blob = new Blob([jsonl], { type: 'application/jsonl' });
     const url = URL.createObjectURL(blob);
@@ -573,7 +584,7 @@ async function importData(e) {
 
             if (content.startsWith('[')) {
                 imported = JSON.parse(content);
-    } else {
+            } else {
                 imported = content.split('\n').filter(l => l.trim()).map(l => JSON.parse(l));
             }
 
@@ -629,7 +640,7 @@ function parseMetadata(text) {
         }
     });
     return meta;
-    }
+}
 
 function generateSlug(name) {
     return name.toLowerCase()
@@ -660,25 +671,25 @@ function setupColumnResizers() {
         const resizer = document.createElement('div');
         resizer.className = 'resizer';
         th.appendChild(resizer);
-        
+
         let startX, startWidth;
-        
+
         resizer.addEventListener('mousedown', e => {
             startX = e.pageX;
             startWidth = th.offsetWidth;
             resizer.classList.add('resizing');
-            
+
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mouseup', onMouseUp);
             e.preventDefault();
-    });
+        });
 
         function onMouseMove(e) {
             const diff = e.pageX - startX;
             th.style.width = Math.max(50, startWidth + diff) + 'px';
             th.style.minWidth = th.style.width;
         }
-        
+
         function onMouseUp() {
             resizer.classList.remove('resizing');
             document.removeEventListener('mousemove', onMouseMove);
@@ -691,25 +702,25 @@ function setupColumnResizers() {
 function setupPanelResizer() {
     const panel = document.getElementById('edit-panel');
     const resizer = document.getElementById('panel-resizer');
-    
+
     let startX, startWidth;
-    
+
     resizer.addEventListener('mousedown', e => {
         startX = e.pageX;
         startWidth = panel.offsetWidth;
         resizer.classList.add('resizing');
-        
+
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
         e.preventDefault();
     });
-    
+
     function onMouseMove(e) {
         const diff = startX - e.pageX;
         const newWidth = Math.min(800, Math.max(350, startWidth + diff));
         panel.style.width = newWidth + 'px';
     }
-    
+
     function onMouseUp() {
         resizer.classList.remove('resizing');
         document.removeEventListener('mousemove', onMouseMove);
@@ -734,10 +745,10 @@ async function fetchFromOpenRouter() {
         // 调用 OpenRouter API 获取所有模型列表
         const res = await fetch('https://openrouter.ai/api/v1/models');
         if (!res.ok) throw new Error('API 请求失败');
-        
+
         const data = await res.json();
         const model = data.data.find(m => m.id === openrouterId);
-        
+
         if (!model) {
             toast(`未找到模型: ${openrouterId}`);
             return;
@@ -746,6 +757,12 @@ async function fetchFromOpenRouter() {
         // 自动填充字段
         fillFromOpenRouterData(model);
         toast('已从 OpenRouter 获取数据');
+
+        // 如果知识截止日期为空，尝试询问模型
+        if (!val('knowledge_cutoff')) {
+            btn.textContent = '查询知识截止...';
+            await queryKnowledgeCutoff(openrouterId);
+        }
     } catch (err) {
         console.error('OpenRouter API error:', err);
         toast('获取失败: ' + err.message);
@@ -755,12 +772,77 @@ async function fetchFromOpenRouter() {
     }
 }
 
+// 查询模型知识截止日期
+async function queryKnowledgeCutoff(modelId) {
+    try {
+        const apiKey = await getOpenRouterApiKey();
+        if (!apiKey) {
+            console.log('No API key for knowledge cutoff query');
+            return;
+        }
+
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+                model: modelId,
+                messages: [{
+                    role: 'user',
+                    content: 'What is your knowledge cutoff date? Reply with ONLY the year and month in format YYYY-MM, nothing else.'
+                }],
+                max_tokens: 20,
+                temperature: 0
+            })
+        });
+
+        if (!res.ok) {
+            console.warn('Knowledge cutoff query failed');
+            return;
+        }
+
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content?.trim();
+
+        if (reply) {
+            // 解析回复，提取年月
+            const match = reply.match(/(\d{4})[-\/](\d{1,2})/);
+            if (match) {
+                const year = match[1];
+                const month = match[2].padStart(2, '0');
+                const cutoffDate = `${year}-${month}-01`;
+                setVal('knowledge_cutoff', cutoffDate);
+                toast('已获取知识截止日期');
+            }
+        }
+    } catch (err) {
+        console.warn('Knowledge cutoff query error:', err);
+    }
+}
+
+// 获取 OpenRouter API Key
+async function getOpenRouterApiKey() {
+    // 尝试从服务器获取
+    try {
+        const res = await fetch('/api/openrouter-key');
+        if (res.ok) {
+            const data = await res.json();
+            return data.key;
+        }
+    } catch (e) { }
+
+    // 提示用户输入（如果需要）
+    return null;
+}
+
 // 从 OpenRouter 数据填充表单
 function fillFromOpenRouterData(orModel) {
     // 解析 ID 获取开发者信息 (格式: developer/model-name)
     const idParts = orModel.id.split('/');
     const developerSlug = idParts[0] || '';
-    
+
     // 开发者名称映射
     const developerMap = {
         'openai': 'OpenAI',
@@ -785,7 +867,7 @@ function fillFromOpenRouterData(orModel) {
         'databricks': 'Databricks',
         'nousresearch': 'Nous Research'
     };
-    
+
     // family 映射 (从 tokenizer)
     const familyMap = {
         'GPT': 'GPT',
@@ -866,7 +948,7 @@ function fillFromOpenRouterData(orModel) {
         const modalities = orModel.architecture.input_modalities.map(m => modalityMap[m] || m).filter(Boolean);
         if (modalities.length > 0) {
             setChecked('modalities_input', modalities);
-    }
+        }
     }
 
     // 填充输出模态
@@ -875,23 +957,23 @@ function fillFromOpenRouterData(orModel) {
         const modalities = orModel.architecture.output_modalities.map(m => modalityMap[m] || m).filter(Boolean);
         if (modalities.length > 0) {
             setChecked('modalities_output', modalities);
-    }
+        }
     }
 
     // 填充能力标签 (根据 supported_parameters)
     if (orModel.supported_parameters) {
         const params = orModel.supported_parameters;
-        
+
         // 工具调用
         if (params.includes('tools') || params.includes('tool_choice')) {
             document.getElementById('supports_tool_use').checked = true;
-}
+        }
 
         // JSON Mode
         if (params.includes('response_format') || params.includes('structured_outputs')) {
             document.getElementById('supports_json_mode').checked = true;
         }
-        
+
         // 推理能力
         if (params.includes('reasoning') || params.includes('include_reasoning') || params.includes('reasoning_effort')) {
             document.getElementById('supports_reasoning').checked = true;
@@ -913,6 +995,231 @@ function capitalizeFirst(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+// HuggingFace API 调用
+async function fetchFromHuggingFace() {
+    const hfId = val('huggingface_id');
+    if (!hfId) {
+        toast('请先输入 HuggingFace ID');
+        return;
+    }
+
+    const btn = document.getElementById('fetch-huggingface');
+    const originalText = btn.textContent;
+    btn.textContent = '获取中...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch(`https://huggingface.co/api/models/${hfId}`);
+        if (!res.ok) throw new Error('模型不存在或 API 请求失败');
+
+        const model = await res.json();
+        fillFromHuggingFaceData(model);
+        toast('已从 HuggingFace 获取数据');
+    } catch (err) {
+        console.error('HuggingFace API error:', err);
+        toast('获取失败: ' + err.message);
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+// 从 HuggingFace 数据填充表单
+function fillFromHuggingFaceData(hfModel) {
+    // 开发者名称映射
+    const authorMap = {
+        'meta-llama': 'Meta',
+        'google': 'Google',
+        'microsoft': 'Microsoft',
+        'mistralai': 'Mistral AI',
+        'Qwen': 'Alibaba',
+        'deepseek-ai': 'DeepSeek',
+        'THUDM': 'Tsinghua',
+        '01-ai': '01.AI',
+        'stabilityai': 'Stability AI',
+        'NousResearch': 'Nous Research',
+        'databricks': 'Databricks',
+        'bigcode': 'BigCode',
+        'EleutherAI': 'EleutherAI',
+        'tiiuae': 'TII UAE',
+        'CohereForAI': 'Cohere'
+    };
+
+    // pipeline_tag → branch_type 映射
+    const pipelineMap = {
+        'text-generation': 'Chat',
+        'text2text-generation': 'Instruct',
+        'image-text-to-text': 'Vision',
+        'visual-question-answering': 'Vision',
+        'automatic-speech-recognition': 'Multimodal',
+        'text-to-image': 'Multimodal',
+        'feature-extraction': 'Base'
+    };
+
+    // tags → architecture 映射
+    const archTags = {
+        'moe': 'MoE',
+        'transformer': 'Transformer',
+        'mamba': 'Mamba/SSM',
+        'ssm': 'Mamba/SSM',
+        'rnn': 'RNN'
+    };
+
+    // tags → family 映射
+    const familyTags = {
+        'llama': 'Llama',
+        'qwen': 'Qwen',
+        'qwen2': 'Qwen',
+        'mistral': 'Mistral',
+        'gemma': 'Gemma',
+        'gemma2': 'Gemma',
+        'phi': 'Phi',
+        'phi3': 'Phi',
+        'deepseek': 'DeepSeek',
+        'yi': 'Yi',
+        'falcon': 'Falcon',
+        'starcoder': 'StarCoder',
+        'codellama': 'CodeLlama',
+        'internlm': 'InternLM',
+        'baichuan': 'Baichuan',
+        'chatglm': 'ChatGLM'
+    };
+
+    // 填充名称
+    if (hfModel.modelId && !val('name')) {
+        // 从 modelId 提取模型名称（去掉作者前缀）
+        const parts = hfModel.modelId.split('/');
+        const modelName = parts.length > 1 ? parts[1] : parts[0];
+        setVal('name', modelName);
+        setVal('slug', generateSlug(modelName));
+    }
+
+    // 填充开发者
+    if (hfModel.author && !val('developer')) {
+        const dev = authorMap[hfModel.author] || capitalizeFirst(hfModel.author);
+        setVal('developer', dev);
+    }
+
+    // 填充 HuggingFace URL
+    if (hfModel.modelId && !val('url_huggingface')) {
+        setVal('url_huggingface', `https://huggingface.co/${hfModel.modelId}`);
+    }
+
+    // 填充下载量和点赞数
+    if (hfModel.downloads) {
+        setVal('hf_downloads', hfModel.downloads);
+    }
+    if (hfModel.likes) {
+        setVal('hf_likes', hfModel.likes);
+    }
+
+    // 填充许可协议
+    if (hfModel.license && !val('license')) {
+        setVal('license', hfModel.license);
+    }
+
+    // 从 tags 解析架构和 family
+    if (hfModel.tags && Array.isArray(hfModel.tags)) {
+        const tagsLower = hfModel.tags.map(t => t.toLowerCase());
+
+        // 解析架构
+        if (!val('architecture')) {
+            for (const [tag, arch] of Object.entries(archTags)) {
+                if (tagsLower.includes(tag)) {
+                    setVal('architecture', arch);
+                    break;
+                }
+            }
+        }
+
+        // 解析 family
+        if (!val('family')) {
+            for (const [tag, family] of Object.entries(familyTags)) {
+                if (tagsLower.includes(tag)) {
+                    setVal('family', family);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 填充 branch_type (从 pipeline_tag)
+    if (hfModel.pipeline_tag && !val('branch_type')) {
+        const branchType = pipelineMap[hfModel.pipeline_tag];
+        if (branchType) {
+            setVal('branch_type', branchType);
+        }
+    }
+
+    // 填充推理框架 (从 library_name)
+    if (hfModel.library_name) {
+        const frameworkMap = {
+            'transformers': 'Transformers',
+            'diffusers': 'Transformers',
+            'peft': 'Transformers'
+        };
+        const framework = frameworkMap[hfModel.library_name];
+        if (framework) {
+            const checkbox = document.querySelector(`input[name="inference_frameworks"][value="${framework}"]`);
+            if (checkbox) checkbox.checked = true;
+        }
+    }
+
+    // 从 safetensors 获取参数量和模型大小
+    if (hfModel.safetensors) {
+        // 总参数量 (转为 B)
+        if (hfModel.safetensors.total && !val('params_total')) {
+            const paramsB = (hfModel.safetensors.total / 1e9).toFixed(2);
+            setVal('params_total', paramsB);
+        }
+        // 模型大小 (bytes → GB)
+        if (hfModel.safetensors.parameters && !val('model_size')) {
+            // parameters 是各精度的参数数，取最大的
+            const sizes = Object.values(hfModel.safetensors.parameters);
+            if (sizes.length > 0) {
+                const maxSize = Math.max(...sizes);
+                const sizeGB = (maxSize / 1e9).toFixed(2);
+                setVal('model_size', sizeGB);
+            }
+        }
+    }
+
+    // 从 config 获取技术规格
+    if (hfModel.config) {
+        // 上下文窗口
+        const contextLen = hfModel.config.max_position_embeddings ||
+            hfModel.config.max_seq_len ||
+            hfModel.config.n_positions;
+        if (contextLen && !val('context_window')) {
+            setVal('context_window', contextLen);
+        }
+
+        // 词表大小
+        if (hfModel.config.vocab_size && !val('vocab_size')) {
+            setVal('vocab_size', hfModel.config.vocab_size);
+        }
+
+        // 层数
+        const layers = hfModel.config.num_hidden_layers ||
+            hfModel.config.n_layer ||
+            hfModel.config.num_layers;
+        if (layers && !val('layers')) {
+            setVal('layers', layers);
+        }
+
+        // 注意力头数
+        const heads = hfModel.config.num_attention_heads ||
+            hfModel.config.n_head ||
+            hfModel.config.num_heads;
+        if (heads && !val('attention_heads')) {
+            setVal('attention_heads', heads);
+        }
+    }
+
+    // 设置模型类型为开源
+    document.querySelector('input[name="model_type"][value="open"]').checked = true;
+}
+
 // 翻译描述
 async function translateDescription() {
     const description = val('description');
@@ -927,7 +1234,7 @@ async function translateDescription() {
     btn.textContent = '翻译中...';
     btn.disabled = true;
 
-        try {
+    try {
         const res = await fetch('/api/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -935,20 +1242,20 @@ async function translateDescription() {
         });
 
         const data = await res.json();
-        
+
         if (data.error) {
             throw new Error(data.error);
         }
 
         setVal('description_zh', data.translation);
         toast('翻译完成');
-        } catch (err) {
+    } catch (err) {
         console.error('Translation error:', err);
         toast('翻译失败: ' + err.message);
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
-}
+    }
 }
 
 // Benchmark 下拉建议
@@ -956,7 +1263,7 @@ function setupBenchmarkSuggestions() {
     const input = document.getElementById('benchmark-name');
     const suggestions = document.getElementById('benchmark-suggestions');
     let selectedIndex = -1;
-    
+
     // 输入时显示建议
     input.addEventListener('input', () => {
         const value = input.value.toLowerCase().trim();
@@ -967,17 +1274,17 @@ function setupBenchmarkSuggestions() {
     input.addEventListener('focus', () => {
         showSuggestions(input.value.toLowerCase().trim());
     });
-    
+
     // 失焦时隐藏
     input.addEventListener('blur', () => {
         setTimeout(() => suggestions.classList.remove('show'), 150);
     });
-    
+
     // 键盘导航
     input.addEventListener('keydown', e => {
         const items = suggestions.querySelectorAll('.benchmark-suggestion-item');
         if (!items.length) return;
-        
+
         if (e.key === 'ArrowDown') {
             e.preventDefault();
             selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
@@ -993,25 +1300,25 @@ function setupBenchmarkSuggestions() {
             document.getElementById('benchmark-score').focus();
         } else if (e.key === 'Escape') {
             suggestions.classList.remove('show');
-}
+        }
     });
-    
+
     function showSuggestions(filter) {
-        const filtered = knownBenchmarks.filter(name => 
+        const filtered = knownBenchmarks.filter(name =>
             !filter || name.toLowerCase().includes(filter)
         );
-        
+
         if (filtered.length === 0) {
             suggestions.classList.remove('show');
             return;
         }
-        
+
         selectedIndex = -1;
-        suggestions.innerHTML = filtered.map(name => 
+        suggestions.innerHTML = filtered.map(name =>
             `<div class="benchmark-suggestion-item">${esc(name)}</div>`
         ).join('');
         suggestions.classList.add('show');
-        
+
         // 点击选择
         suggestions.querySelectorAll('.benchmark-suggestion-item').forEach(item => {
             item.addEventListener('mousedown', e => {
@@ -1022,7 +1329,7 @@ function setupBenchmarkSuggestions() {
             });
         });
     }
-    
+
     function updateSelection(items) {
         items.forEach((item, i) => {
             item.classList.toggle('selected', i === selectedIndex);
