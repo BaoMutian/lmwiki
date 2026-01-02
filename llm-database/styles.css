@@ -354,10 +354,9 @@ body {
     color: var(--text-muted);
 }
 
-.translate-options > label {
+.translate-options label {
     white-space: nowrap;
     flex-shrink: 0;
-    min-width: 60px;
 }
 
 .translate-options select {
@@ -365,7 +364,11 @@ body {
     padding: 3px 6px;
     border: 1px solid var(--border);
     border-radius: 3px;
-    min-width: 150px;
+    min-width: 160px;
+}
+
+.translate-options select option {
+    white-space: nowrap;
 }
 
 /* 编辑面板 */
@@ -462,12 +465,10 @@ body {
 .tab-content {
     display: none;
     padding: 16px;
-    overflow-y: auto;
 }
 
 .tab-content.active {
     display: block;
-    flex: 1;
 }
 
 .form-row {
@@ -656,28 +657,9 @@ body {
     border-top: 1px solid var(--border);
     background: #fafafa;
     flex-shrink: 0;
-}
-
-/* 编辑表单布局 - 固定底部按钮 */
-#edit-form {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    min-height: 0;
-    overflow: hidden;
-}
-
-#edit-form .tabs {
-    flex-shrink: 0;
-}
-
-#edit-form .tab-content {
-    flex: 1;
-    overflow-y: auto;
-}
-
-#edit-form .form-actions {
-    flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
 }
 
 /* Toast 提示 */

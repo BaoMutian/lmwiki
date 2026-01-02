@@ -866,7 +866,7 @@ function fillFromOpenRouterData(orModel) {
         const modalities = orModel.architecture.input_modalities.map(m => modalityMap[m] || m).filter(Boolean);
         if (modalities.length > 0) {
             setChecked('modalities_input', modalities);
-        }
+    }
     }
 
     // 填充输出模态
@@ -948,7 +948,7 @@ async function translateDescription() {
     } finally {
         btn.textContent = originalText;
         btn.disabled = false;
-    }
+}
 }
 
 // Benchmark 下拉建议
@@ -962,7 +962,7 @@ function setupBenchmarkSuggestions() {
         const value = input.value.toLowerCase().trim();
         showSuggestions(value);
     });
-    
+
     // 聚焦时显示全部
     input.addEventListener('focus', () => {
         showSuggestions(input.value.toLowerCase().trim());
@@ -993,7 +993,7 @@ function setupBenchmarkSuggestions() {
             document.getElementById('benchmark-score').focus();
         } else if (e.key === 'Escape') {
             suggestions.classList.remove('show');
-        }
+}
     });
     
     function showSuggestions(filter) {
