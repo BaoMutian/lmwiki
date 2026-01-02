@@ -3,141 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LLM 数据库管理系统</title>
+    <title>LLM Database</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🤖 LLM 数据库管理系统</h1>
-            <nav>
-                <button class="nav-btn active" data-view="list">📋 数据列表</button>
-                <button class="nav-btn" data-view="form">➕ 添加/编辑</button>
-            </nav>
+    <div class="app">
+        <!-- 顶部工具栏 -->
+        <header class="toolbar">
+            <h1>LLM Database</h1>
+            <div class="toolbar-actions">
+                <button id="add-btn" class="btn btn-primary">+ 新增</button>
+                <button id="import-btn" class="btn">导入</button>
+                <button id="export-btn" class="btn">导出</button>
+                <input type="file" id="import-file" accept=".jsonl,.json" hidden>
+            </div>
         </header>
 
-        <!-- 数据列表视图 -->
-        <section id="list-view" class="view active">
-            <div class="toolbar">
-                <input type="text" id="search-input" placeholder="搜索模型名称、开发者、家族...">
-                <select id="filter-architecture">
-                    <option value="">所有架构</option>
-                    <option value="Transformer">Transformer</option>
-                    <option value="MoE">MoE</option>
-                    <option value="Mamba/SSM">Mamba/SSM</option>
-                    <option value="RNN">RNN</option>
-                    <option value="Diffusion">Diffusion</option>
-                </select>
-                <select id="filter-opensource">
-                    <option value="">开源状态</option>
-                    <option value="true">开源</option>
-                    <option value="false">闭源</option>
-                </select>
-                <button id="export-btn" class="btn-secondary">📥 导出 JSONL</button>
-                <button id="import-btn" class="btn-secondary">📤 导入 JSONL</button>
-                <input type="file" id="import-file" accept=".jsonl" style="display:none">
-            </div>
-            <div class="stats">
-                <span id="total-count">共 0 个模型</span>
-            </div>
-            <div id="model-list" class="model-grid"></div>
-        </section>
+        <div class="main-container">
+            <!-- 左侧：数据列表 -->
+            <section class="list-panel">
+                <!-- 搜索筛选 -->
+                <div class="filter-bar">
+                    <input type="text" id="search" placeholder="搜索模型名称、开发者..." class="search-input">
+                    <select id="filter-type">
+                        <option value="">全部类型</option>
+                        <option value="open">开源</option>
+                        <option value="closed">闭源</option>
+                    </select>
+                    <select id="filter-developer">
+                        <option value="">全部开发者</option>
+                    </select>
+                    <select id="filter-maintained">
+                        <option value="">全部状态</option>
+                        <option value="no" selected>未维护</option>
+                        <option value="yes">已维护</option>
+                    </select>
+                    <span class="count" id="count">0 条记录</span>
+                </div>
 
-        <!-- 表单视图 -->
-        <section id="form-view" class="view">
-            <form id="llm-form">
-                <input type="hidden" id="edit-index" value="-1">
+                <!-- 数据表格 -->
+                <div class="table-wrapper">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th class="col-name">名称</th>
+                                <th class="col-developer">开发者</th>
+                                <th class="col-type">类型</th>
+                                <th class="col-family">家族</th>
+                                <th class="col-params">参数量</th>
+                                <th class="col-date">发布日期</th>
+                                <th class="col-maintained">维护</th>
+                                <th class="col-actions">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 右侧：编辑面板 -->
+            <aside class="edit-panel" id="edit-panel">
+                <div class="panel-resizer" id="panel-resizer"></div>
+                <div class="panel-header">
+                    <h2 id="panel-title">新增模型</h2>
+                    <button class="btn-close" id="close-panel">&times;</button>
+                </div>
                 
-                <!-- 0. 模型类型选择 -->
-                <fieldset>
-                    <legend>🔐 模型类型</legend>
-                    <div class="form-group full-width">
-                        <div class="radio-group">
-                            <label class="radio-label">
-                                <input type="radio" name="model_type" value="open" id="type_open" checked>
-                                <span class="radio-text">🔓 开源模型</span>
-                                <span class="radio-desc">开放权重，可本地部署</span>
-                            </label>
-                            <label class="radio-label">
-                                <input type="radio" name="model_type" value="closed" id="type_closed">
-                                <span class="radio-text">🔒 闭源模型</span>
-                                <span class="radio-desc">仅 API 访问，技术细节不公开</span>
-                            </label>
-                        </div>
+                <form id="edit-form">
+                    <input type="hidden" id="edit-index" value="-1">
+                    
+                    <!-- 标签页导航 -->
+                    <div class="tabs">
+                        <button type="button" class="tab active" data-tab="basic">基础信息</button>
+                        <button type="button" class="tab" data-tab="tech">技术规格</button>
+                        <button type="button" class="tab" data-tab="capability">能力</button>
+                        <button type="button" class="tab" data-tab="links">链接</button>
+                        <button type="button" class="tab" data-tab="benchmark">评分</button>
                     </div>
-                </fieldset>
 
-                <!-- 1. 基础身份信息 -->
-                <fieldset>
-                    <legend>📝 基础身份信息</legend>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="name">模型全名 *</label>
-                            <input type="text" id="name" required placeholder="e.g., Llama-3-70B-Instruct">
+                    <!-- 基础信息 -->
+                    <div class="tab-content active" id="tab-basic">
+                        <!-- OpenRouter 自动填充 -->
+                        <div class="form-row openrouter-row">
+                            <label for="openrouter_id">OpenRouter ID</label>
+                            <div class="openrouter-input">
+                                <input type="text" id="openrouter_id" placeholder="如: google/gemini-2.5-pro">
+                                <button type="button" id="fetch-openrouter" class="btn btn-sm btn-primary">获取数据</button>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="short_name">简短名称</label>
-                            <input type="text" id="short_name" placeholder="e.g., Llama 3 70B">
+                        <div class="form-row">
+                            <label>模型类型 *</label>
+                            <div class="radio-group">
+                                <label><input type="radio" name="model_type" value="open" checked> 开源</label>
+                                <label><input type="radio" name="model_type" value="closed"> 闭源</label>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="slug">URL 标识符</label>
-                            <input type="text" id="slug" placeholder="e.g., llama-3-70b">
+                        <div class="form-row">
+                            <label for="name">模型名称 *</label>
+                            <input type="text" id="name" required>
                         </div>
-                        <div class="form-group">
-                            <label for="developer">开发机构 *</label>
-                            <input type="text" id="developer" required placeholder="e.g., Meta, OpenAI">
+                        <div class="form-row">
+                            <label for="short_name">简称</label>
+                            <input type="text" id="short_name">
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
+                            <label for="slug">Slug</label>
+                            <input type="text" id="slug">
+                        </div>
+                        <div class="form-row">
+                            <label for="developer">开发者 *</label>
+                            <input type="text" id="developer" required>
+                        </div>
+                        <div class="form-row">
+                            <label for="family">家族</label>
+                            <input type="text" id="family" placeholder="GPT, Llama, Claude...">
+                        </div>
+                        <div class="form-row">
+                            <label for="model_series">系列</label>
+                            <input type="text" id="model_series">
+                        </div>
+                        <div class="form-row">
+                            <label for="branch_type">分支类型</label>
+                            <select id="branch_type">
+                                <option value="">选择...</option>
+                                <option value="Base">Base</option>
+                                <option value="Instruct">Instruct</option>
+                                <option value="Chat">Chat</option>
+                                <option value="Vision">Vision</option>
+                                <option value="Code">Code</option>
+                                <option value="Math">Math</option>
+                                <option value="Reasoning">Reasoning</option>
+                                <option value="Multimodal">Multimodal</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
                             <label for="release_date">发布日期</label>
                             <input type="date" id="release_date">
                         </div>
-                        <div class="form-group">
-                            <label for="version">版本号</label>
-                            <input type="text" id="version" placeholder="e.g., v1, v2">
+                        <div class="form-row">
+                            <label for="version">版本</label>
+                            <input type="text" id="version">
                         </div>
-                        <div class="form-group">
-                            <label for="family">所属家族</label>
-                            <input type="text" id="family" placeholder="e.g., GPT, Llama, Claude">
+                        <div class="form-row">
+                            <label for="logo_url">Logo URL</label>
+                            <input type="text" id="logo_url">
                         </div>
-                        <div class="form-group">
-                            <label for="model_series">所属系列</label>
-                            <input type="text" id="model_series" placeholder="e.g., GPT-4, Llama-3, Claude-3">
+                        <div class="form-row">
+                            <label for="description">描述 (英文)</label>
+                            <textarea id="description" rows="3"></textarea>
                         </div>
-                        <div class="form-group">
-                            <label for="branch_type">分支类型</label>
-                            <select id="branch_type">
-                                <option value="">选择分支</option>
-                                <option value="Base">Base (基座)</option>
-                                <option value="Instruct">Instruct (指令)</option>
-                                <option value="Chat">Chat (对话)</option>
-                                <option value="Vision">Vision (视觉)</option>
-                                <option value="Audio">Audio (音频)</option>
-                                <option value="Code">Code (代码)</option>
-                                <option value="Math">Math (数学)</option>
-                                <option value="Reasoning">Reasoning (推理)</option>
-                                <option value="Multimodal">Multimodal (多模态)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="logo_url">Logo URL/路径</label>
-                            <input type="text" id="logo_url" placeholder="https://... 或 imgs/logo.png">
-                        </div>
+                        <div class="form-row description-zh-row">
+                            <label for="description_zh">
+                                描述 (中文)
+                                <button type="button" id="translate-btn" class="btn btn-sm" title="翻译英文描述">翻译</button>
+                            </label>
+                            <textarea id="description_zh" rows="3"></textarea>
+                            <div class="translate-options">
+                                <label>翻译模型:</label>
+                                <select id="translate-model">
+                                    <option value="google/gemini-3-flash-preview">Gemini 2.5 Flash</option>
+                                    <option value="google/gemini-2.5-flash-lite">Gemini 2.0 Flash</option>
+                                    <option value="openai/gpt-5-nano">GPT-4o Mini</option>
+                                    <option value="anthropic/claude-haiku-4.5">Claude 3 Haiku</option>
+                                    <option value="deepseek/deepseek-v3.2">DeepSeek Chat</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group full-width">
-                        <label for="description">模型简介</label>
-                        <textarea id="description" rows="2" placeholder="官方的一句话简介"></textarea>
-                    </div>
-                </fieldset>
 
-                <!-- 2. 技术规格 (开源完整版) -->
-                <fieldset id="tech-specs-open" class="open-only">
-                    <legend>⚙️ 技术规格</legend>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="architecture">架构类型</label>
+                    <!-- 技术规格 -->
+                    <div class="tab-content" id="tab-tech">
+                        <div class="form-row">
+                            <label for="architecture">架构</label>
                             <select id="architecture">
-                                <option value="">选择架构</option>
+                                <option value="">选择...</option>
                                 <option value="Transformer">Transformer</option>
                                 <option value="MoE">MoE</option>
                                 <option value="Mamba/SSM">Mamba/SSM</option>
@@ -145,123 +185,132 @@
                                 <option value="Diffusion">Diffusion</option>
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="params_total">总参数量 (B)</label>
-                            <input type="number" id="params_total" step="0.1" placeholder="e.g., 70.0">
+                            <input type="number" id="params_total" step="0.1">
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="params_active">激活参数量 (B)</label>
-                            <input type="number" id="params_active" step="0.1" placeholder="MoE 模型专用">
+                            <input type="number" id="params_active" step="0.1">
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="context_window">上下文窗口</label>
-                            <input type="number" id="context_window" placeholder="e.g., 128000">
+                            <input type="number" id="context_window">
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="max_output_tokens">最大输出</label>
-                            <input type="number" id="max_output_tokens" placeholder="e.g., 8192">
+                            <input type="number" id="max_output_tokens">
                         </div>
-                        <div class="form-group">
-                            <label for="training_tokens">训练数据量 (T tokens)</label>
-                            <input type="number" id="training_tokens" step="0.1" placeholder="e.g., 15">
+                        <div class="form-row">
+                            <label for="training_tokens">训练 Tokens (T)</label>
+                            <input type="number" id="training_tokens" step="0.1">
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="vocab_size">词表大小</label>
-                            <input type="number" id="vocab_size" placeholder="e.g., 128000">
+                            <input type="number" id="vocab_size">
                         </div>
-                        <div class="form-group">
-                            <label for="knowledge_cutoff">知识截止日期</label>
+                        <div class="form-row">
+                            <label for="knowledge_cutoff">知识截止</label>
                             <input type="date" id="knowledge_cutoff">
                         </div>
-                        <div class="form-group">
-                            <label for="layers">网络层数</label>
-                            <input type="number" id="layers" placeholder="可选">
+                        <div class="form-row">
+                            <label for="layers">层数</label>
+                            <input type="number" id="layers">
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label for="attention_mechanism">注意力机制</label>
                             <select id="attention_mechanism">
-                                <option value="">选择机制</option>
+                                <option value="">选择...</option>
                                 <option value="MHA">MHA</option>
                                 <option value="GQA">GQA</option>
                                 <option value="MQA">MQA</option>
                                 <option value="Sliding Window">Sliding Window</option>
                             </select>
                         </div>
-                    </div>
-                    <div class="form-group full-width">
-                        <label>微调方式</label>
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" name="fine_tuning_method" value="Pre-trained"> Pre-trained</label>
-                            <label><input type="checkbox" name="fine_tuning_method" value="SFT"> SFT</label>
-                            <label><input type="checkbox" name="fine_tuning_method" value="RL"> RL</label>
+                        <div class="form-row">
+                            <label>微调方式</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="fine_tuning_method" value="Pre-trained"> Pre-trained</label>
+                                <label><input type="checkbox" name="fine_tuning_method" value="SFT"> SFT</label>
+                                <label><input type="checkbox" name="fine_tuning_method" value="RL"> RL</label>
+                            </div>
                         </div>
-                    </div>
-                </fieldset>
-
-                <!-- 2. 技术规格 (闭源精简版) -->
-                <fieldset id="tech-specs-closed" class="closed-only" style="display:none;">
-                    <legend>⚙️ 技术规格</legend>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="context_window_closed">上下文窗口</label>
-                            <input type="number" id="context_window_closed" placeholder="e.g., 128000">
-                        </div>
-                        <div class="form-group">
-                            <label for="max_output_tokens_closed">最大输出</label>
-                            <input type="number" id="max_output_tokens_closed" placeholder="e.g., 8192">
-                        </div>
-                        <div class="form-group">
-                            <label for="knowledge_cutoff_closed">知识截止日期</label>
-                            <input type="date" id="knowledge_cutoff_closed">
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- 3. 商用与授权 (开源完整版) -->
-                <fieldset id="commercial-open" class="open-only">
-                    <legend>💼 商用与授权</legend>
-                    <div class="form-grid">
-                        <div class="form-group">
+                        <hr>
+                        <h4>商用与部署</h4>
+                        <div class="form-row">
                             <label for="license">许可协议</label>
-                            <input type="text" id="license" placeholder="e.g., Apache 2.0, MIT">
+                            <input type="text" id="license" placeholder="Apache 2.0, MIT...">
                         </div>
-                        <div class="form-group">
-                            <label for="pricing_input">输入价格 ($/1M tokens)</label>
-                            <input type="number" id="pricing_input" step="0.01" placeholder="e.g., 0.5">
+                        <div class="form-row">
+                            <label>商用</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" id="commercial_use_allowed"> 允许商用</label>
+                                <label><input type="checkbox" id="free_tier_available"> 免费层级</label>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="pricing_output">输出价格 ($/1M tokens)</label>
-                            <input type="number" id="pricing_output" step="0.01" placeholder="e.g., 1.5">
+                        <div class="form-row">
+                            <label for="pricing_input">输入价格 ($/1M)</label>
+                            <input type="number" id="pricing_input" step="0.01">
+                        </div>
+                        <div class="form-row">
+                            <label for="pricing_output">输出价格 ($/1M)</label>
+                            <input type="number" id="pricing_output" step="0.01">
+                        </div>
+                        <div class="form-row">
+                            <label for="model_size">模型大小 (GB)</label>
+                            <input type="number" id="model_size" step="0.01">
+                        </div>
+                        <div class="form-row">
+                            <label for="tensor_type">Tensor 类型</label>
+                            <select id="tensor_type">
+                                <option value="">选择...</option>
+                                <option value="F32">F32</option>
+                                <option value="F16">F16</option>
+                                <option value="BF16">BF16</option>
+                                <option value="Q8_0">Q8_0</option>
+                                <option value="Q4_K_M">Q4_K_M</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label for="model_format">模型格式</label>
+                            <select id="model_format">
+                                <option value="">选择...</option>
+                                <option value="safetensors">Safetensors</option>
+                                <option value="pytorch">PyTorch</option>
+                                <option value="gguf">GGUF</option>
+                                <option value="onnx">ONNX</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label for="num_files">文件数量</label>
+                            <input type="number" id="num_files">
+                        </div>
+                        <div class="form-row">
+                            <label>量化版本</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="quantization_available" value="GGUF"> GGUF</label>
+                                <label><input type="checkbox" name="quantization_available" value="AWQ"> AWQ</label>
+                                <label><input type="checkbox" name="quantization_available" value="GPTQ"> GPTQ</label>
+                                <label><input type="checkbox" name="quantization_available" value="EXL2"> EXL2</label>
+                                <label><input type="checkbox" name="quantization_available" value="MLX"> MLX</label>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <label>推理框架</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="inference_frameworks" value="Transformers"> Transformers</label>
+                                <label><input type="checkbox" name="inference_frameworks" value="vLLM"> vLLM</label>
+                                <label><input type="checkbox" name="inference_frameworks" value="llama.cpp"> llama.cpp</label>
+                                <label><input type="checkbox" name="inference_frameworks" value="Ollama"> Ollama</label>
+                                <label><input type="checkbox" name="inference_frameworks" value="SGLang"> SGLang</label>
+                                <label><input type="checkbox" name="inference_frameworks" value="LMStudio"> LMStudio</label>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-group full-width">
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" id="commercial_use_allowed"> 允许商用</label>
-                            <label><input type="checkbox" id="free_tier_available"> 有免费层级</label>
-                        </div>
-                    </div>
-                </fieldset>
 
-                <!-- 3. 商用与授权 (闭源精简版) -->
-                <fieldset id="commercial-closed" class="closed-only" style="display:none;">
-                    <legend>💼 价格</legend>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="pricing_input_closed">输入价格 ($/1M tokens)</label>
-                            <input type="number" id="pricing_input_closed" step="0.01" placeholder="e.g., 2.5">
-                        </div>
-                        <div class="form-group">
-                            <label for="pricing_output_closed">输出价格 ($/1M tokens)</label>
-                            <input type="number" id="pricing_output_closed" step="0.01" placeholder="e.g., 10">
-                        </div>
-                    </div>
-                </fieldset>
-
-                <!-- 4. 能力与模态 -->
-                <fieldset>
-                    <legend>🎯 能力与模态</legend>
-                    <div class="form-grid-2">
-                        <div class="form-group">
+                    <!-- 能力 -->
+                    <div class="tab-content" id="tab-capability">
+                        <div class="form-row">
                             <label>输入模态</label>
                             <div class="checkbox-group">
                                 <label><input type="checkbox" name="modalities_input" value="Text"> Text</label>
@@ -271,7 +320,7 @@
                                 <label><input type="checkbox" name="modalities_input" value="PDF"> PDF</label>
                             </div>
                         </div>
-                        <div class="form-group">
+                        <div class="form-row">
                             <label>输出模态</label>
                             <div class="checkbox-group">
                                 <label><input type="checkbox" name="modalities_output" value="Text"> Text</label>
@@ -280,183 +329,92 @@
                                 <label><input type="checkbox" name="modalities_output" value="Video"> Video</label>
                             </div>
                         </div>
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="languages">支持语言 (逗号分隔)</label>
-                        <input type="text" id="languages" placeholder="e.g., English, Chinese, Multilingual, Code">
-                    </div>
-                    <div class="form-group full-width">
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" id="supports_tool_use"> 支持工具调用</label>
-                            <label><input type="checkbox" id="supports_json_mode"> 支持 JSON Mode</label>
-                            <label><input type="checkbox" id="supports_vision"> 多模态视觉</label>
-                            <label><input type="checkbox" id="coding_capable"> 代码能力突出</label>
-                            <label><input type="checkbox" id="supports_reasoning"> 支持思考/推理</label>
+                        <div class="form-row">
+                            <label for="languages">语言 (逗号分隔)</label>
+                            <input type="text" id="languages" placeholder="English, Chinese...">
+                        </div>
+                        <div class="form-row">
+                            <label>能力标签</label>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" id="supports_tool_use"> 工具调用</label>
+                                <label><input type="checkbox" id="supports_json_mode"> JSON Mode</label>
+                                <label><input type="checkbox" id="supports_vision"> 视觉</label>
+                                <label><input type="checkbox" id="coding_capable"> 代码</label>
+                                <label><input type="checkbox" id="supports_reasoning"> 推理</label>
+                            </div>
                         </div>
                     </div>
-                </fieldset>
 
-                <!-- 5. 模型文件与部署 (仅开源) -->
-                <fieldset id="deployment-section" class="open-only">
-                    <legend>🖥️ 模型文件与部署</legend>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="model_size">模型大小 (GB)</label>
-                            <input type="number" id="model_size" step="0.01" placeholder="e.g., 14.97">
+                    <!-- 链接 -->
+                    <div class="tab-content" id="tab-links">
+                        <div class="form-row">
+                            <label for="url_paper">论文</label>
+                            <input type="url" id="url_paper">
                         </div>
-                        <div class="form-group">
-                            <label for="tensor_type">Tensor 类型</label>
-                            <select id="tensor_type">
-                                <option value="">选择类型</option>
-                                <option value="F32">F32</option>
-                                <option value="F16">F16</option>
-                                <option value="BF16">BF16</option>
-                                <option value="Q8_0">Q8_0</option>
-                                <option value="Q6_K">Q6_K</option>
-                                <option value="Q5_K_M">Q5_K_M</option>
-                                <option value="Q4_K_M">Q4_K_M</option>
-                                <option value="Q4_0">Q4_0</option>
-                                <option value="Q3_K_M">Q3_K_M</option>
-                                <option value="Q2_K">Q2_K</option>
-                            </select>
+                        <div class="form-row">
+                            <label for="url_huggingface">HuggingFace</label>
+                            <input type="url" id="url_huggingface">
                         </div>
-                        <div class="form-group">
-                            <label for="model_format">模型格式</label>
-                            <select id="model_format">
-                                <option value="">选择格式</option>
-                                <option value="safetensors">Safetensors</option>
-                                <option value="pytorch">PyTorch (.bin)</option>
-                                <option value="gguf">GGUF</option>
-                                <option value="ggml">GGML</option>
-                                <option value="onnx">ONNX</option>
-                                <option value="tensorflow">TensorFlow</option>
-                            </select>
+                        <div class="form-row">
+                            <label for="url_github">GitHub</label>
+                            <input type="url" id="url_github">
                         </div>
-                        <div class="form-group">
-                            <label for="num_files">文件数量</label>
-                            <input type="number" id="num_files" placeholder="e.g., 4">
+                        <div class="form-row">
+                            <label for="url_demo">Demo</label>
+                            <input type="url" id="url_demo">
+                        </div>
+                        <div class="form-row">
+                            <label for="url_api_docs">API 文档</label>
+                            <input type="url" id="url_api_docs">
+                        </div>
+                        <div class="form-row">
+                            <label for="url_blog">Blog</label>
+                            <input type="url" id="url_blog">
+                        </div>
+                        <div class="form-row">
+                            <label for="url_website">官网</label>
+                            <input type="url" id="url_website">
+                        </div>
+                        <hr>
+                        <div class="form-row">
+                            <label for="metadata">自定义元数据 (key: value 格式)</label>
+                            <textarea id="metadata" rows="4" placeholder="custom_field: value"></textarea>
                         </div>
                     </div>
-                    <div class="form-group full-width">
-                        <label>可用量化版本</label>
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" name="quantization_available" value="GGUF"> GGUF</label>
-                            <label><input type="checkbox" name="quantization_available" value="AWQ"> AWQ</label>
-                            <label><input type="checkbox" name="quantization_available" value="GPTQ"> GPTQ</label>
-                            <label><input type="checkbox" name="quantization_available" value="EXL2"> EXL2</label>
-                            <label><input type="checkbox" name="quantization_available" value="ONNX"> ONNX</label>
-                            <label><input type="checkbox" name="quantization_available" value="MLX"> MLX</label>
-                        </div>
-                    </div>
-                    <div class="form-group full-width">
-                        <label>支持的推理框架</label>
-                        <div class="checkbox-group">
-                            <label><input type="checkbox" name="inference_frameworks" value="Transformers"> Transformers</label>
-                            <label><input type="checkbox" name="inference_frameworks" value="vLLM"> vLLM</label>
-                            <label><input type="checkbox" name="inference_frameworks" value="llama.cpp"> llama.cpp</label>
-                            <label><input type="checkbox" name="inference_frameworks" value="Ollama"> Ollama</label>
-                            <label><input type="checkbox" name="inference_frameworks" value="TGI"> TGI</label>
-                            <label><input type="checkbox" name="inference_frameworks" value="SGLang"> SGLang</label>
-                            <label><input type="checkbox" name="inference_frameworks" value="LMStudio"> LMStudio</label>
-                        </div>
-                    </div>
-                </fieldset>
 
-                <!-- 6. 评分 -->
-                <fieldset>
-                    <legend>📊 评分快照</legend>
-                    <div class="form-group">
-                        <label for="score_arena_elo">Chatbot Arena Elo</label>
-                        <input type="number" id="score_arena_elo" placeholder="e.g., 1250">
-                    </div>
-                    <div class="form-group full-width">
-                        <label>Benchmark 评分</label>
-                        <div class="benchmark-selector">
-                            <div class="benchmark-add-row">
-                                <select id="benchmark-select">
-                                    <option value="">选择已有 Benchmark...</option>
-                                </select>
-                                <input type="text" id="benchmark-new-name" placeholder="或输入新 Benchmark 名称">
-                                <input type="number" id="benchmark-score" step="0.1" placeholder="分数">
-                                <button type="button" id="benchmark-add-btn" class="btn-small">➕ 添加</button>
+                    <!-- 评分 -->
+                    <div class="tab-content" id="tab-benchmark">
+                        <div class="form-row">
+                            <label for="score_arena_elo">Arena Elo</label>
+                            <input type="number" id="score_arena_elo">
+                        </div>
+                        <hr>
+                        <h4>Benchmarks</h4>
+                        <div class="benchmark-editor">
+                            <div class="benchmark-add">
+                                <div class="benchmark-name-wrapper">
+                                    <input type="text" id="benchmark-name" placeholder="输入或选择 Benchmark" autocomplete="off">
+                                    <div id="benchmark-suggestions" class="benchmark-suggestions"></div>
+                                </div>
+                                <input type="number" id="benchmark-score" placeholder="分数" step="0.1">
+                                <button type="button" id="add-benchmark" class="btn btn-sm">+</button>
                             </div>
                             <div id="benchmark-list" class="benchmark-list"></div>
                         </div>
-                        <input type="hidden" id="benchmarks-data">
                     </div>
-                </fieldset>
 
-                <!-- 7. 外部资源 -->
-                <fieldset>
-                    <legend>🔗 外部资源</legend>
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label for="url_paper">论文链接</label>
-                            <input type="url" id="url_paper" placeholder="https://arxiv.org/...">
-                        </div>
-                        <div class="form-group">
-                            <label for="url_huggingface">Hugging Face</label>
-                            <input type="url" id="url_huggingface" placeholder="https://huggingface.co/...">
-                        </div>
-                        <div class="form-group">
-                            <label for="url_demo">Demo 链接</label>
-                            <input type="url" id="url_demo" placeholder="https://...">
-                        </div>
-                        <div class="form-group">
-                            <label for="url_github">GitHub</label>
-                            <input type="url" id="url_github" placeholder="https://github.com/...">
-                        </div>
-                        <div class="form-group">
-                            <label for="url_api_docs">API 文档</label>
-                            <input type="url" id="url_api_docs" placeholder="https://...">
-                        </div>
-                        <div class="form-group">
-                            <label for="url_blog">Blog</label>
-                            <input type="url" id="url_blog" placeholder="https://...">
-                        </div>
-                        <div class="form-group">
-                            <label for="url_website">官网</label>
-                            <input type="url" id="url_website" placeholder="https://...">
-                        </div>
+                    <!-- 表单操作 -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">保存</button>
+                        <button type="button" class="btn" id="reset-form">重置</button>
+                        <button type="button" class="btn btn-danger" id="delete-btn" style="display:none;">删除</button>
                     </div>
-                </fieldset>
-
-                <!-- 8. 自定义元数据 -->
-                <fieldset>
-                    <legend>📦 自定义元数据</legend>
-                    <div class="form-group full-width">
-                        <label>Metadata (格式: 键:值，每行一个)</label>
-                        <textarea id="metadata" rows="4" placeholder="custom_field: value&#10;another_field: 123&#10;tags: tag1, tag2"></textarea>
-                        <small class="form-hint">可添加任意自定义字段，用于存储小众或特殊信息</small>
-                    </div>
-                </fieldset>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary" id="submit-btn">💾 保存模型</button>
-                    <button type="button" class="btn-secondary" id="reset-btn">🔄 重置表单</button>
-                </div>
-            </form>
-        </section>
-    </div>
-
-    <!-- 详情弹窗 -->
-    <div id="detail-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-btn">&times;</span>
-            <div id="detail-content"></div>
+                </form>
+            </aside>
         </div>
-    </div>
 
-    <!-- 确认删除弹窗 -->
-    <div id="confirm-modal" class="modal">
-        <div class="modal-content small">
-            <h3>确认删除</h3>
-            <p>确定要删除这个模型吗？此操作不可撤销。</p>
-            <div class="modal-actions">
-                <button class="btn-danger" id="confirm-delete">删除</button>
-                <button class="btn-secondary" id="cancel-delete">取消</button>
-            </div>
-        </div>
+        <!-- 状态提示 -->
+        <div id="toast" class="toast"></div>
     </div>
 
     <script src="app.js"></script>

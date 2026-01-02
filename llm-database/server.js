@@ -1,9 +1,25 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
 const PORT = 3000;
 const DATA_FILE = path.join(__dirname, 'llm_database.jsonl');
+const ENV_FILE = path.join(__dirname, '.env');
+
+// 加载 .env 文件
+function loadEnv() {
+    if (fs.existsSync(ENV_FILE)) {
+        const content = fs.readFileSync(ENV_FILE, 'utf-8');
+        content.split('\n').forEach(line => {
+            const match = line.match(/^([^=]+)=(.*)$/);
+            if (match) {
+                process.env[match[1].trim()] = match[2].trim();
+            }
+        });
+    }
+}
+loadEnv();
 
 // MIME types
 const MIME_TYPES = {
@@ -70,6 +86,83 @@ const server = http.createServer((req, res) => {
             'Content-Disposition': `attachment; filename="llm_database_${new Date().toISOString().slice(0, 10)}.jsonl"`
         });
         res.end(data);
+        return;
+    }
+
+    // 翻译 API
+    if (req.url === '/api/translate' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => body += chunk);
+        req.on('end', async () => {
+            try {
+                const { text, model } = JSON.parse(body);
+                const apiKey = process.env.OPENROUTER_API_KEY;
+                
+                if (!apiKey) {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: '未配置 OPENROUTER_API_KEY' }));
+                    return;
+                }
+
+                const requestData = JSON.stringify({
+                    model: model || 'google/gemini-2.0-flash-001',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: '你是一个专业的翻译助手。请将用户提供的英文文本翻译成简体中文。只输出翻译结果，不要添加任何解释或额外内容。'
+                        },
+                        {
+                            role: 'user',
+                            content: text
+                        }
+                    ]
+                });
+
+                const options = {
+                    hostname: 'openrouter.ai',
+                    path: '/api/v1/chat/completions',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                        'HTTP-Referer': 'http://localhost:3000',
+                        'X-Title': 'LLM Database'
+                    }
+                };
+
+                const apiReq = https.request(options, (apiRes) => {
+                    let data = '';
+                    apiRes.on('data', chunk => data += chunk);
+                    apiRes.on('end', () => {
+                        try {
+                            const result = JSON.parse(data);
+                            if (result.error) {
+                                res.writeHead(500, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ error: result.error.message || '翻译失败' }));
+                            } else {
+                                const translation = result.choices?.[0]?.message?.content || '';
+                                res.writeHead(200, { 'Content-Type': 'application/json' });
+                                res.end(JSON.stringify({ translation }));
+                            }
+                        } catch (e) {
+                            res.writeHead(500, { 'Content-Type': 'application/json' });
+                            res.end(JSON.stringify({ error: '解析响应失败' }));
+                        }
+                    });
+                });
+
+                apiReq.on('error', (e) => {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: e.message }));
+                });
+
+                apiReq.write(requestData);
+                apiReq.end();
+            } catch (err) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
         return;
     }
 
