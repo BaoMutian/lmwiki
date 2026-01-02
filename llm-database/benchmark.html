@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Benchmark 管理 - LLM Database</title>
+    <link rel="stylesheet" href="benchmark.css" />
+</head>
+<body>
+    <div class="app">
+        <!-- 顶部工具栏 -->
+        <header class="toolbar">
+            <div class="toolbar-left">
+                <a href="index.html" class="btn btn-back">← 返回</a>
+                <h1>Benchmark 评分管理</h1>
+            </div>
+            <div class="toolbar-actions">
+                <button id="import-csv-btn" class="btn btn-primary">导入 CSV</button>
+                <button id="export-btn" class="btn">导出</button>
+                <input type="file" id="csv-file-input" accept=".csv" hidden />
+            </div>
+        </header>
+
+        <!-- 主容器 -->
+        <div class="main-container">
+            <!-- 筛选栏 -->
+            <div class="filter-bar">
+                <input
+                    type="text"
+                    id="search"
+                    placeholder="搜索模型名称..."
+                    class="search-input"
+                />
+                <select id="filter-developer">
+                    <option value="">全部开发者</option>
+                </select>
+                <button id="column-selector-btn" class="btn btn-sm">选择列 ▼</button>
+                <span class="count" id="count">0 条记录</span>
+            </div>
+            
+            <!-- 列选择器下拉面板 -->
+            <div id="column-selector" class="column-selector">
+                <div class="column-selector-header">
+                    <span>选择显示的 Benchmark 列</span>
+                    <div class="column-selector-actions">
+                        <button class="btn btn-sm" onclick="selectAllColumns()">全选</button>
+                        <button class="btn btn-sm" onclick="selectNoColumns()">全不选</button>
+                    </div>
+                </div>
+                <div id="column-list" class="column-list"></div>
+            </div>
+
+            <!-- Benchmark 表格 -->
+            <div class="table-wrapper">
+                <table id="benchmark-table">
+                    <thead id="table-head">
+                        <tr>
+                            <th class="col-model sticky-col">模型名称</th>
+                            <!-- Benchmark 列将动态生成 -->
+                        </tr>
+                    </thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- CSV 导入模态框 -->
+        <div id="import-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">导入 Benchmark 数据</h2>
+                    <button class="btn-close" id="close-modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <!-- 步骤1: 文件信息 -->
+                    <div id="step-info" class="step-section">
+                        <div class="info-row">
+                            <span class="info-label">文件名:</span>
+                            <span id="file-name">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Benchmark:</span>
+                            <span id="benchmark-name">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">模式:</span>
+                            <span id="import-mode" class="mode-tag">-</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">CSV 记录数:</span>
+                            <span id="csv-count">-</span>
+                        </div>
+                    </div>
+
+                    <!-- 步骤2: 匹配预览 -->
+                    <div id="step-matching" class="step-section">
+                        <h3>模型名称匹配预览</h3>
+                        <p class="matching-hint">
+                            请核查以下匹配关系，确认无误后点击"确认导入"。
+                            <br/>未匹配的模型将不会导入分数。
+                        </p>
+                        <div class="matching-stats">
+                            <span class="stat-item matched">
+                                <span id="matched-count">0</span> 已匹配
+                            </span>
+                            <span class="stat-item unmatched">
+                                <span id="unmatched-count">0</span> 未匹配
+                            </span>
+                        </div>
+                        <div class="matching-table-wrapper">
+                            <table id="matching-table">
+                                <thead>
+                                    <tr>
+                                        <th>数据库模型</th>
+                                        <th>CSV 模型 (匹配)</th>
+                                        <th>分数</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="matching-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" id="cancel-import">取消</button>
+                    <button class="btn btn-primary" id="confirm-import">确认导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态提示 -->
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <script src="benchmark.js"></script>
+</body>
+</html>
+

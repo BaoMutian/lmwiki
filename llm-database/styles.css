@@ -65,6 +65,9 @@ body {
     font-size: 13px;
     cursor: pointer;
     transition: background 0.15s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .btn:hover {
@@ -664,7 +667,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-height: 200px;
+    max-height: 350px;
     overflow-y: auto;
 }
 
@@ -731,6 +734,10 @@ body {
 .toast.show {
     transform: translateX(-50%) translateY(0);
     opacity: 1;
+}
+
+.toast.toast-error {
+    background: #dc2626;
 }
 
 /* 空状态 */

@@ -44,7 +44,7 @@ export default async function HomePage({ searchParams }: PageProps) {
             </Suspense>
           </div>
         </div>
-      </div>
+        </div>
     </div>
   );
 }

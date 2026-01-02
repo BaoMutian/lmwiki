@@ -174,16 +174,28 @@ function loadFromStorage() {
 }
 
 async function saveModels() {
-    localStorage.setItem('llm_database', JSON.stringify(models));
+    try {
+        localStorage.setItem('llm_database', JSON.stringify(models));
+    } catch (e) {
+        console.error('LocalStorage save failed:', e);
+        throw new Error('本地存储失败: ' + e.message);
+    }
+
     if (USE_SERVER) {
         try {
-            await fetch(`${API_BASE}/models`, {
+            const res = await fetch(`${API_BASE}/models`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(models)
             });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || `服务器错误 (${res.status})`);
+            }
         } catch (e) {
-            console.warn('Failed to sync with server');
+            console.error('Server sync failed:', e);
+            throw new Error('服务器同步失败: ' + e.message);
         }
     }
 }
@@ -305,30 +317,49 @@ window.confirmDelete = function (index) {
 async function handleSubmit(e) {
     e.preventDefault();
 
-    const model = collectFormData();
+    try {
+        const model = collectFormData();
+        const isNew = editIndex < 0;
 
-    if (editIndex >= 0) {
-        models[editIndex] = model;
-        toast('已更新');
-    } else {
-        models.push(model);
-        toast('已添加');
-    }
+        if (isNew) {
+            models.push(model);
+            editIndex = models.length - 1;
+        } else {
+            models[editIndex] = model;
+        }
 
-    await saveModels();
-    renderTable();
-    updateDeveloperFilter();
-    closePanel();
-}
+        await saveModels();
 
-function handleDelete() {
-    if (editIndex >= 0 && confirm('确定要删除这个模型吗？')) {
-        models.splice(editIndex, 1);
-        saveModels();
+        if (isNew) {
+            document.getElementById('panel-title').textContent = '编辑模型';
+            document.getElementById('delete-btn').style.display = 'block';
+            toast('已添加');
+        } else {
+            toast('已保存');
+        }
+
+        collectKnownBenchmarks();
         renderTable();
         updateDeveloperFilter();
-        closePanel();
-        toast('已删除');
+    } catch (err) {
+        console.error('Save failed:', err);
+        toast('保存失败: ' + err.message, 'error');
+    }
+}
+
+async function handleDelete() {
+    if (editIndex >= 0 && confirm('确定要删除这个模型吗？')) {
+        try {
+            models.splice(editIndex, 1);
+            await saveModels();
+            renderTable();
+            updateDeveloperFilter();
+            closePanel();
+            toast('已删除');
+        } catch (err) {
+            console.error('Delete failed:', err);
+            toast('删除失败: ' + err.message, 'error');
+        }
     }
 }
 
@@ -403,7 +434,6 @@ function collectFormData() {
         metadata: parseMetadata(val('metadata')),
 
         // 评分
-        score_arena_elo: num('score_arena_elo'),
         benchmarks: { ...benchmarks },
 
         // 时间戳
@@ -486,8 +516,7 @@ function populateForm(model) {
     const metaText = Object.entries(model.metadata || {}).map(([k, v]) => `${k}: ${v}`).join('\n');
     setVal('metadata', metaText);
 
-    // 评分
-    setVal('score_arena_elo', model.score_arena_elo);
+    // 评分（score_arena_elo 不再通过表单编辑）
     benchmarks = { ...(model.benchmarks || {}) };
     renderBenchmarks();
 
@@ -655,11 +684,18 @@ function esc(text) {
     return div.innerHTML;
 }
 
-function toast(msg) {
+function toast(msg, type = 'success') {
     const el = document.getElementById('toast');
     el.textContent = msg;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 2500);
+    el.className = 'toast show';
+    if (type === 'error') {
+        el.classList.add('toast-error');
+    }
+    const duration = type === 'error' ? 4000 : 2500;
+    setTimeout(() => {
+        el.classList.remove('show');
+        el.classList.remove('toast-error');
+    }, duration);
 }
 
 // 列宽调整
@@ -774,13 +810,19 @@ async function fetchFromOpenRouter() {
 
 // 查询模型知识截止日期
 async function queryKnowledgeCutoff(modelId) {
-    try {
-        const apiKey = await getOpenRouterApiKey();
-        if (!apiKey) {
-            console.log('No API key for knowledge cutoff query');
-            return;
-        }
+    const apiKey = await getOpenRouterApiKey();
+    if (!apiKey) {
+        toast('未配置 API Key，跳过知识截止查询');
+        return;
+    }
 
+    toast('正在查询知识截止日期...');
+
+    // 创建超时控制器
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒超时
+
+    try {
         const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -793,13 +835,17 @@ async function queryKnowledgeCutoff(modelId) {
                     role: 'user',
                     content: 'What is your knowledge cutoff date? Reply with ONLY the year and month in format YYYY-MM, nothing else.'
                 }],
-                max_tokens: 20,
+                max_tokens: 2048,
                 temperature: 0
-            })
+            }),
+            signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
+
         if (!res.ok) {
-            console.warn('Knowledge cutoff query failed');
+            const errData = await res.json().catch(() => ({}));
+            toast('知识截止查询失败: ' + (errData.error?.message || res.status));
             return;
         }
 
@@ -807,17 +853,36 @@ async function queryKnowledgeCutoff(modelId) {
         const reply = data.choices?.[0]?.message?.content?.trim();
 
         if (reply) {
-            // 解析回复，提取年月
-            const match = reply.match(/(\d{4})[-\/](\d{1,2})/);
+            console.log('Knowledge cutoff reply:', reply);
+            // 解析回复，提取年月（支持多种格式）
+            const match = reply.match(/(\d{4})[-\/\s](\d{1,2})/);
             if (match) {
                 const year = match[1];
                 const month = match[2].padStart(2, '0');
                 const cutoffDate = `${year}-${month}-01`;
                 setVal('knowledge_cutoff', cutoffDate);
-                toast('已获取知识截止日期');
+                toast(`知识截止: ${year}-${month}`);
+            } else {
+                // 尝试提取只有年份的情况
+                const yearMatch = reply.match(/(\d{4})/);
+                if (yearMatch) {
+                    const cutoffDate = `${yearMatch[1]}-01-01`;
+                    setVal('knowledge_cutoff', cutoffDate);
+                    toast(`知识截止: ${yearMatch[1]} (仅年份)`);
+                } else {
+                    toast('无法解析知识截止日期: ' + reply.slice(0, 30));
+                }
             }
+        } else {
+            toast('模型未返回知识截止日期');
         }
     } catch (err) {
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+            toast('知识截止查询超时');
+        } else {
+            toast('知识截止查询错误: ' + err.message);
+        }
         console.warn('Knowledge cutoff query error:', err);
     }
 }
