@@ -829,6 +829,13 @@ function fillFromOpenRouterData(orModel) {
         setVal('family', family);
     }
 
+    // 填充发布日期 (从 OpenRouter created 时间戳)
+    if (!val('release_date') && orModel.created) {
+        const date = new Date(orModel.created * 1000); // Unix 时间戳转毫秒
+        const dateStr = date.toISOString().slice(0, 10); // YYYY-MM-DD 格式
+        setVal('release_date', dateStr);
+    }
+
     // 填充上下文窗口
     const contextLen = orModel.top_provider?.context_length || orModel.context_length;
     if (contextLen && !val('context_window')) {
