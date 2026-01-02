@@ -35,12 +35,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 function loadMaintainedStatus() {
     try {
         const stored = localStorage.getItem('llm_maintained');
-    if (stored) {
+        if (stored) {
             maintainedSet = new Set(JSON.parse(stored));
         }
         } catch (e) {
         console.warn('Failed to load maintained status');
-}
+    }
 }
 
 // 保存维护状态

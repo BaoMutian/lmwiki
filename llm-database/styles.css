@@ -81,13 +81,15 @@ body {
 }
 
 .btn-danger {
-    background: var(--danger);
-    border-color: var(--danger);
-    color: white;
+    background: var(--bg-card);
+    border-color: var(--border);
+    color: var(--text);
 }
 
 .btn-danger:hover {
-    opacity: 0.9;
+    background: #fef2f2;
+    border-color: var(--danger);
+    color: var(--danger);
 }
 
 .btn-sm {
@@ -367,10 +369,6 @@ body {
     min-width: 160px;
 }
 
-.translate-options select option {
-    white-space: nowrap;
-}
-
 /* 编辑面板 */
 .edit-panel {
     width: 450px;
@@ -425,6 +423,8 @@ body {
     border-bottom: 1px solid var(--border);
     background: #fafafa;
     overflow-x: auto;
+    overflow-y: hidden;
+    flex-shrink: 0;
 }
 
 .tab {
@@ -657,9 +657,6 @@ body {
     border-top: 1px solid var(--border);
     background: #fafafa;
     flex-shrink: 0;
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
 }
 
 /* Toast 提示 */
